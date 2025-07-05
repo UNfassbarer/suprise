@@ -125,7 +125,8 @@ footer {
 
 .gallery-container {
   display: flex;
-  justify-content: center; /* Bilder zentrieren */
+  align-items: center;
+  justify-content: center;
   gap: 1rem;
   width: max-content;
   margin: 0 auto;
