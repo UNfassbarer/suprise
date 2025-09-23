@@ -4,7 +4,19 @@ const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) +
 // Universal event handler function
 const handleEvent = (element, action, event, callback) => element[`${action}EventListener`](event, callback);
 
-const RGB = (x) => `rgb(${x}, ${255 - x}, 255)`;
+// Clickevents for menu buttons
+document.querySelectorAll("#Menu_Content button").forEach((button) => {
+  handleEvent(button, "add", "click", () => ButtonClick(button));
+});
+// Buttonclick toggle
+function toggleButtonPress(status) {
+  document.getElementById("Menu_Content").querySelectorAll("button").forEach((button) => {
+    button.style.pointerEvents = status;
+  })
+};
+
+// Generate random coler between two defined colors
+const RGB = (x, y) => `rgb(${x}, ${y - x}, ${y})`;
 
 // Menu button actions
 const menu_actions = {
@@ -18,26 +30,26 @@ const menu_actions = {
 // Button actions & Particle creation
 let counter = 0;
 function ButtonClick(el) { //Every Click creates particles
+  if (counter === 0) {
+    toggleButtonPress("none");
+    setTimeout(() => { toggleButtonPress("all") }, 750)
+  }
   counter === 0 ? menu_actions[el.id](el) : null; // Call button action only once
-  counter === 0 ? GetPositions(el) : null; // Get exact position of button
-  counter < 30 ? LoadAnimation(el, counter) : counter = 0; // Limit particle count & Load Animation
+  counter < 30 ? LoadAnimation(el) : counter = 0; // Limit particle count & Load Animation
 }
-
-let x = 0;
-let y = 0;
-function GetPositions(el) {
-  const rect = el.getBoundingClientRect();
-  x = rect.left + window.scrollX;
-  y = rect.top + window.scrollY;
-}
-
 
 // Manage Particle Animation on button click
 function LoadAnimation(el) {
+  // Get exact position of button
+  let x = 0;
+  let y = 0;
+  const rect = el.getBoundingClientRect();
+  x = rect.left + window.scrollX;
+  y = rect.top + window.scrollY;
   const particle = document.createElement('div');
   const size = Math.floor(Math.random() * 20 + 5);
   particle.style.cssText = `width: ${size}px; height: ${size}px;`;
-  particle.style.background = RGB(getRandomInt(0, 255));
+  particle.style.background = RGB(getRandomInt(0, 255), 255);
   particle.style.left = `${x + el.offsetWidth / 2 + getRandomInt(-el.offsetWidth / 2, el.offsetWidth / 2)}px`;
   particle.style.top = `${y + el.offsetHeight / 2 + getRandomInt(-el.offsetHeight / 2, el.offsetHeight / 2)}px`;
   particle.style.animation = `particle ${getRandomInt(0.75, 2)}s forwards`;
@@ -49,6 +61,7 @@ function LoadAnimation(el) {
 
 // Menu
 const symbols = document.getElementById("Menu_Loading_Animation");
+const Menu = document.getElementById("Menu_Container");
 
 // Resize animation for spining circles
 function resizeMenuAnimation(modifier, border) {
@@ -66,7 +79,6 @@ const ToggleHiddenMenu = () => Menu.querySelectorAll("div").forEach(div => { div
 
 // Open and close menu
 let MenuOpen = false;
-const Menu = document.getElementById("Menu_Container");
 handleEvent(Menu, "add", "mouseenter", OpenMenu);
 
 // Open Menu

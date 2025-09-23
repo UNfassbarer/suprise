@@ -1,5 +1,4 @@
 body {
-  background-color: hsl(206, 70%, 60%);
   transition: all 1s ease-in-out;
 }
 
@@ -33,9 +32,9 @@ body {
   overflow: hidden;
   transition: all 0.5s ease-in-out;
   background: linear-gradient(135deg,
-      rgba(0, 0, 0, 0.8),
+      rgb(0, 0, 0),
       magenta,
-      rgba(191, 0, 255, 0.2));
+      rgb(191, 0, 255));
 }
 
 #Menu_Container::after {
@@ -114,9 +113,9 @@ body {
   color: white;
   font-size: 16px;
   margin: 24px;
-  cursor: pointer;
   transition: 0.125s all ease-in-out;
   border-radius: 10px;
+  cursor: pointer;
 }
 
 ul {
@@ -144,7 +143,7 @@ ul {
   background: radial-gradient(circle at center,
       rgba(11, 173, 210, 0.6) 20%,
       rgb(10, 40, 89) 95%);
-  scale: 1.1;
+  transform: scale(1.1);
   color: rgb(208, 0, 255);
   font-size: 20px;
 }
@@ -156,11 +155,11 @@ ul {
 }
 
 .particle {
-  z-index: 10;
   position: fixed;
   border-radius: 50%;
   pointer-events: none;
   opacity: 0.5;
+  z-index: 10;
 }
 
 .button:focus:not(:active) {
