@@ -1,0 +1,102 @@
+/*sparkling menu button per click */
+@keyframes particle {
+  to {
+    transform: translateY(-200px) scale(0) translateX(100px);
+    opacity: 0;
+  }
+}
+
+/*glowing menu button per click*/
+@keyframes click-glow {
+  0% {
+    box-shadow: 0 0 0px rgba(0, 200, 255, 0);
+    color: blue;
+  }
+
+  20% {
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.8), 0 0 30px rgba(0, 200, 255, 0.6);
+    transform: scale(0.9);
+    color: rgb(204, 0, 255);
+  }
+
+  100% {
+    box-shadow: 0 0 0px rgba(0, 200, 255, 0);
+  }
+}
+
+/*animated "M" for Menu */
+@keyframes Menu_loading_M {
+  0% {
+    scale: 0.9;
+    opacity: 0.75;
+  }
+
+  50% {
+    scale: 1.1;
+    opacity: 1;
+  }
+
+  100% {
+    scale: 0.9;
+    opacity: 0.75;
+  }
+}
+
+/* Universal spin animation with "var(--deg)" */
+@keyframes spin {
+  to {
+    transform: rotate(var(--deg));
+  }
+}
+
+/* Menu box border animation */
+@keyframes moveGradient {
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/*Rotating lines after menu open*/
+@keyframes colorChange {
+  0% {
+    opacity: 1;
+    scale: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+    scale: 0.1;
+  }
+
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+
+}
+
+/*Universal shrink animation */
+@keyframes shrink {
+  to {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/*Universal resize animation */
+@keyframes resize {
+  0% {
+    transform: scale(3);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scale(5);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(3);
+    opacity: 0.5;
+  }
+}

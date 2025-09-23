@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="symbols.css">
+    <link rel="stylesheet" href="animations.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300" rel="stylesheet">
+</head>
+
+<body>
+    <div id="Menu_Container" class="centerContent centeredObject">
+        <div id="caption">
+            <h1>M</h1>
+        </div>
+        <section id="Menu_Loading_Animation" class="centerContent">
+            <canvas class="Menu_Loading L_1 L_Left"></canvas>
+            <canvas class="Menu_Loading L_2 L_Left"></canvas>
+            <canvas class="Menu_Loading L_3 L_Left"></canvas>
+            <canvas class="Menu_Loading L_4 L_Left"></canvas>
+            <canvas class="Menu_Loading L_5 L_Left"></canvas>
+            <canvas class="Menu_Loading L_6 L_Right"></canvas>
+            <canvas class="Menu_Loading L_7 L_Right"></canvas>
+            <canvas class="Menu_Loading L_8 L_Right"></canvas>
+            <canvas class="Menu_Loading L_9 L_Right"></canvas>
+            <canvas class="Menu_Loading L_10 L_Right"></canvas>
+        </section>
+        <div id="Menu_Content" class="hiddenContent">
+            <canvas class="Rotating_background centerContent"></canvas>
+            <h2>MENU</h2>
+            <ul>
+                <li><button class="button" type="button" id="NewGame" onclick="ButtonClick(this)">New Game<canvas>
+                        </canvas>
+                    </button>
+                </li>
+                <li><button class="button" type="button" id="LoadGame" onclick="ButtonClick(this)">Load Game
+                        <canvas>
+                        </canvas>
+                    </button>
+                </li>
+                <li><button class="button" type="button" id="SaveGame" onclick="ButtonClick(this)">Save Game
+                        <canvas>
+                        </canvas>
+                    </button>
+                </li>
+                <li><button class="button" type="button" id="Settings" onclick="ButtonClick(this)">Settings<canvas>
+                        </canvas>
+                    </button>
+                </li>
+                <li><button class="button" type="button" id="Exit" onclick="ButtonClick(this)">Exit<canvas></canvas>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
