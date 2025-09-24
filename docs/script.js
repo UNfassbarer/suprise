@@ -4,16 +4,21 @@ const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) +
 // Universal event handler function
 const handleEvent = (element, action, event, callback) => element[`${action}EventListener`](event, callback);
 
-// Clickevents for menu buttons (desktop + mobile)
+// Clickevents for menu buttons
 document.querySelectorAll("#Menu_Content button").forEach((button) => {
-  // Handle normal clicks
-  handleEvent(button, "add", "click", () => ButtonClick(button));
-
-  // Handle touch or pointer (better for mobile)
-  handleEvent(button, "add", "touchstart", () => ButtonClick(button));
-  // or, if your handleEvent wrapper supports it:
-  // handleEvent(button, "add", "pointerdown", () => ButtonClick(button));
+  // Handle normal clicks and mobile support
+  window.matchMedia("(pointer: coarse)").matches ?
+    handleEvent(button, "add", "touchstart", () => { menuButtonEvents(button) })
+    : handleEvent(button, "add", "click", () => { menuButtonEvents(button) });
 });
+
+function menuButtonEvents(button) {
+  ButtonClick(button)
+  // button.style.animation = "click-glow 1s ease";
+  // button.style.color = "white";
+  // button.querySelector("canvas").style.background = "linear-gradient(-90deg,rgb(27, 221, 255), rgb(0, 191, 255), rgb(236, 27, 255))"
+  // button.querySelector("canvas").style.width = "125px";
+}
 
 // Buttonclick toggle
 function toggleButtonPress(status) {
