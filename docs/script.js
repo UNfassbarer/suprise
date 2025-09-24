@@ -2,7 +2,7 @@
 const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 // Universal event handler function
-const handleEvent = (element, action, event, callback) => { element[`${action}EventListener`](event, callback), document.writeln(event) };
+const handleEvent = (element, action, event, callback) => element[`${action}EventListener`](event, callback);
 
 // Clickevents for menu buttons 
 document.querySelectorAll("#Menu_Content button").forEach((button) => {
@@ -54,8 +54,8 @@ function LoadAnimation(el) {
   let x = 0;
   let y = 0;
   const rect = el.getBoundingClientRect();
-  x = rect.left + window.scrollX;
-  y = rect.top + window.scrollY;
+  x = Math.round(rect.left + window.scrollX);
+  y = Math.round(rect.top + window.scrollY);
 
   // Create particles with random pos, color, animationspeed and size
   const particle = document.createElement('div');
@@ -78,13 +78,27 @@ const symbols = document.getElementById("Menu_Loading_Animation");
 const Menu = document.getElementById("Menu_Container");
 
 // Resize animation for spining circles
+//  & copilot support to avoir rounding errors that caused a rapid and slow growth of the canvas size
+let originalCanvasSizes = null;
+let resizeStep = 0;
+
 function resizeMenuAnimation(modifier, border) {
-  symbols.querySelectorAll("canvas").forEach(canvas => {
-    canvas.style.cssText = `
-        height: ${canvas.offsetHeight + modifier}px;
-        width: ${canvas.offsetWidth + modifier}px;
-        border-top: ${border}px solid hsl(${Math.random() * 90 + 180}, 70%, 60%);`;
-    modifier += modifier;
+  const canvases = symbols.querySelectorAll("canvas");
+  if (!originalCanvasSizes) {
+    originalCanvasSizes = Array.from(canvases).map(canvas => ({
+      width: canvas.offsetWidth,
+      height: canvas.offsetHeight
+    }));
+  }
+  resizeStep += modifier;
+  canvases.forEach((canvas, i) => {
+    const base = originalCanvasSizes[i];
+    const step = resizeStep * Math.pow(2, i);
+    const newHeight = Math.max(1, base.height + step);
+    const newWidth = Math.max(1, base.width + step);
+    canvas.style.height = `${newHeight}px`;
+    canvas.style.width = `${newWidth}px`;
+    canvas.style.borderTop = `${border}px solid hsl(${Math.random() * 90 + 180}, 70%, 60%)`;
   });
 }
 
@@ -102,7 +116,7 @@ let menuStart = false
 function OpenMenu() {
   if (!MenuOpen) {
     Menu.style.cssText = "height: 500px; width: 300px;";
-    resizeMenuAnimation(2, 3);
+    resizeMenuAnimation(1, 3);
     ToggleHiddenMenu();
     symbols.style.animation = "resize 20s infinite";
     MenuOpen = true;
@@ -125,8 +139,23 @@ function CloseMenu() {
   setTimeout(() => {
     Menu.style.cssText = "height: 90px; width: 90px;";
     ToggleHiddenMenu();
-    resizeMenuAnimation(-2, 2);
+    resizeMenuAnimation(-1, 3);
   }, 500);
   symbols.style.animation = "shrink 0.75s forwards";
   MenuOpen = false;
+}
+// Create star background
+function createStar() {
+  console.log("test");
+  const star = document.createElement("canvas");
+  star.className = "star centeredObject";
+  const size = getRandomInt(1,2)
+  star.style.width= `${size}px`;
+  star.style.height= `${size}px`;
+  star.style.left= `${getRandomInt(0,window.innerWidth)}px`;
+  star.style.top= `${getRandomInt(0,window.innerHeight)}px`;
+  star.style.animation= "glow 2.5s infinite";
+  document.body.appendChild(star);
+  setTimeout(() => star.remove(), 2500);
+  setTimeout(createStar, 10);
 }

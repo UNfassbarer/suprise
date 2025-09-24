@@ -181,3 +181,15 @@ ul {
   height: auto;
   width: auto;
 }
+
+/* Star background */
+.star{
+  position: fixed;
+  pointer-events: none;
+  background-color: white;
+  /* height: 10px;
+  width: 10px; */
+  border-radius: 50%;
+  z-index: -100;
+  /* animation: glow 2.5s infinite; */
+}
