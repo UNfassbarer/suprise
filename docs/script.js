@@ -49,12 +49,15 @@ function ButtonClick(el) { //Every Click creates particles
 
 // Manage Particle Animation on button click
 function LoadAnimation(el) {
+
   // Get exact position of button
   let x = 0;
   let y = 0;
   const rect = el.getBoundingClientRect();
   x = rect.left + window.scrollX;
   y = rect.top + window.scrollY;
+
+  // Create particles with random pos, color, animationspeed and size
   const particle = document.createElement('div');
   const size = Math.floor(Math.random() * 20 + 5);
   particle.style.cssText = `width: ${size}px; height: ${size}px;`;
@@ -64,6 +67,8 @@ function LoadAnimation(el) {
   particle.style.animation = `particle ${getRandomInt(0.75, 2)}s forwards`;
   particle.className = 'particle';
   document.body.appendChild(particle);
+
+  // Delay & particle clear
   setTimeout(() => { counter++, ButtonClick(el) }, 0);
   setTimeout(() => { particle.remove() }, 2000);
 }
@@ -88,10 +93,9 @@ const ToggleHiddenMenu = () => Menu.querySelectorAll("div").forEach(div => { div
 
 // Open and close menu
 let MenuOpen = false;
-
-window.matchMedia("(pointer: coarse)").matches ?
-  handleEvent(Menu, "add", "click", OpenMenu)
-  : handleEvent(Menu, "add", "mouseenter", OpenMenu);
+let meunEvent = null;
+window.matchMedia("(pointer: coarse)").matches ? meunEvent = "click" : meunEvent = "mouseenter";
+handleEvent(Menu, "add", meunEvent, OpenMenu)
 
 // Open Menu
 let menuStart = false
@@ -103,6 +107,7 @@ function OpenMenu() {
     symbols.style.animation = "resize 20s infinite";
     MenuOpen = true;
   }
+
   // First menu open
   if (!menuStart) {
     Menu.style.top = "15px";
@@ -115,8 +120,8 @@ function OpenMenu() {
 
 // Close menu on exit click
 function CloseMenu() {
-  handleEvent(Menu, "remove", "mouseenter", OpenMenu);
-  setTimeout(() => { handleEvent(Menu, "add", "mouseenter", OpenMenu) }, 1500);
+  handleEvent(Menu, "remove", meunEvent, OpenMenu);
+  setTimeout(() => { handleEvent(Menu, "remove", meunEvent, OpenMenu) }, 1500);
   setTimeout(() => {
     Menu.style.cssText = "height: 90px; width: 90px;";
     ToggleHiddenMenu();
