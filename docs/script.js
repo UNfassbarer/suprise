@@ -121,7 +121,7 @@ function OpenMenu() {
 // Close menu on exit click
 function CloseMenu() {
   handleEvent(Menu, "remove", meunEvent, OpenMenu);
-  setTimeout(() => { handleEvent(Menu, "remove", meunEvent, OpenMenu) }, 1500);
+  setTimeout(() => { handleEvent(Menu, "add", meunEvent, OpenMenu) }, 1500);
   setTimeout(() => {
     Menu.style.cssText = "height: 90px; width: 90px;";
     ToggleHiddenMenu();
