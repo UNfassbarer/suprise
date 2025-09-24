@@ -2,14 +2,11 @@
 const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 // Universal event handler function
-const handleEvent = (element, action, event, callback) => element[`${action}EventListener`](event, callback);
+const handleEvent = (element, action, event, callback) => { element[`${action}EventListener`](event, callback), document.writeln(event) };
 
-// Clickevents for menu buttons
+// Clickevents for menu buttons 
 document.querySelectorAll("#Menu_Content button").forEach((button) => {
-  // Handle normal clicks and mobile support
-  window.matchMedia("(pointer: coarse)").matches ?
-    handleEvent(button, "add", "touchstart", () => { menuButtonEvents(button) })
-    : handleEvent(button, "add", "click", () => { menuButtonEvents(button) });
+  handleEvent(button, "add", "click", () => ButtonClick(button));
 });
 
 function menuButtonEvents(button) {
@@ -91,7 +88,10 @@ const ToggleHiddenMenu = () => Menu.querySelectorAll("div").forEach(div => { div
 
 // Open and close menu
 let MenuOpen = false;
-handleEvent(Menu, "add", "mouseenter", OpenMenu);
+
+window.matchMedia("(pointer: coarse)").matches ?
+  handleEvent(Menu, "add", "click", OpenMenu)
+  : handleEvent(Menu, "add", "mouseenter", OpenMenu);
 
 // Open Menu
 let menuStart = false
