@@ -6,13 +6,7 @@ const handleEvent = (element, action, event, callback) => element[`${action}Even
 
 // Clickevents for menu buttons (desktop + mobile)
 document.querySelectorAll("#Menu_Content button").forEach((button) => {
-  // Handle normal clicks
   handleEvent(button, "add", "click", () => ButtonClick(button));
-
-  // Handle touch or pointer (better for mobile)
-  handleEvent(button, "add", "touchstart", () => ButtonClick(button));
-  // or, if your handleEvent wrapper supports it:
-  // handleEvent(button, "add", "pointerdown", () => ButtonClick(button));
 });
 // Buttonclick toggle
 function toggleButtonPress(status) {
