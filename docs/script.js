@@ -2,7 +2,7 @@
 const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 // Universal event handler function
-const handleEvent = (element, action, event, callback) => { element[`${action}EventListener`](event, callback), document.getElementById("text").innerHTML = event };
+const handleEvent = (element, action, event, callback) => { element[`${action}EventListener`](event, callback), document.getElementById("test").innerHTML = event };
 
 // Clickevents for menu buttons 
 document.querySelectorAll("#Menu_Content button").forEach((button) => {
