@@ -54,10 +54,10 @@ body {
       hsl(179, 85%, 66%));
   background-size: 300% 300%;
   animation: moveGradient 3s alternate infinite;
-  mask:
+  -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
-  -webkit-mask:
+  mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -183,7 +183,7 @@ ul {
 }
 
 /* Star background */
-.star{
+.star {
   position: fixed;
   pointer-events: none;
   background-color: white;
@@ -192,4 +192,13 @@ ul {
   border-radius: 50%;
   z-index: -100;
   /* animation: glow 2.5s infinite; */
+}
+
+/* Game Box */
+.gameBox{
+  position: absolute;
+  height: 75%;
+  width: 75%;
+  outline: rgb(255, 4, 226) 2px solid;
+  z-index: 0;
 }

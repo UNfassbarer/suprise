@@ -9,13 +9,8 @@ document.querySelectorAll("#Menu_Content button").forEach((button) => {
   handleEvent(button, "add", "click", () => ButtonClick(button));
 });
 
-function menuButtonEvents(button) {
-  ButtonClick(button)
-  // button.style.animation = "click-glow 1s ease";
-  // button.style.color = "white";
-  // button.querySelector("canvas").style.background = "linear-gradient(-90deg,rgb(27, 221, 255), rgb(0, 191, 255), rgb(236, 27, 255))"
-  // button.querySelector("canvas").style.width = "125px";
-}
+// Function to edit multible styles of one element at once
+const EditStyle = (element, styles) => Object.assign(element.style, styles);
 
 // Buttonclick toggle
 function toggleButtonPress(status) {
@@ -29,28 +24,28 @@ const RGB = (x, y) => `rgb(${x}, ${y - x}, ${y})`;
 
 // Menu button actions
 const menu_actions = {
-  NewGame: (el) => { console.log(el.id) },
+  NewGame: (el) => { console.log(el.id), newGame(), CloseMenu() },
   LoadGame: (el) => { console.log(el.id) },
   SaveGame: (el) => { console.log(el.id) },
   Settings: (el) => { console.log(el.id) },
   Exit: (el) => { console.log(el.id), CloseMenu() }
 }
 
-// Button actions & Particle creation
+// Button actions & particle creation
 let counter = 0;
 function ButtonClick(el) { //Every Click creates particles
   if (counter === 0) {
     toggleButtonPress("none");
-    setTimeout(() => { toggleButtonPress("all") }, 750)
+    setTimeout(() => { toggleButtonPress("auto") }, 750)
   }
   counter === 0 ? menu_actions[el.id](el) : null; // Call button action only once
-  counter < 30 ? LoadAnimation(el) : counter = 0; // Limit particle count & Load Animation
+  counter < 30 ? LoadAnimation(el) : counter = 0; // Limit particle count & load animation
 }
 
-// Manage Particle Animation on button click
+// Manage particle animation for button click
 function LoadAnimation(el) {
 
-  // Get exact position of button
+  // Get exact button position
   let x = 0;
   let y = 0;
   const rect = el.getBoundingClientRect();
@@ -60,11 +55,14 @@ function LoadAnimation(el) {
   // Create particles with random pos, color, animationspeed and size
   const particle = document.createElement('div');
   const size = Math.floor(Math.random() * 20 + 5);
-  particle.style.cssText = `width: ${size}px; height: ${size}px;`;
-  particle.style.background = RGB(getRandomInt(0, 255), 255);
-  particle.style.left = `${x + el.offsetWidth / 2 + getRandomInt(-el.offsetWidth / 2, el.offsetWidth / 2)}px`;
-  particle.style.top = `${y + el.offsetHeight / 2 + getRandomInt(-el.offsetHeight / 2, el.offsetHeight / 2)}px`;
-  particle.style.animation = `particle ${getRandomInt(0.75, 2)}s forwards`;
+  EditStyle(particle, {
+    width: `${size}px`,
+    height: `${size}px`,
+    background: `${RGB(getRandomInt(0, 255), 255)}`,
+    left: `${x + el.offsetWidth / 2 + getRandomInt(-el.offsetWidth / 2, el.offsetWidth / 2)}px`,
+    top: `${y + el.offsetHeight / 2 + getRandomInt(-el.offsetHeight / 2, el.offsetHeight / 2)}px`,
+    animation: `particle ${getRandomInt(0.75, 2)}s forwards`
+  });
   particle.className = 'particle';
   document.body.appendChild(particle);
 
@@ -82,80 +80,156 @@ const Menu = document.getElementById("Menu_Container");
 let originalCanvasSizes = null;
 let resizeStep = 0;
 
-function resizeMenuAnimation(modifier, border) {
-  const canvases = symbols.querySelectorAll("canvas");
-  if (!originalCanvasSizes) {
-    originalCanvasSizes = Array.from(canvases).map(canvas => ({
-      width: canvas.offsetWidth,
-      height: canvas.offsetHeight
-    }));
-  }
-  resizeStep += modifier;
-  canvases.forEach((canvas, i) => {
-    const base = originalCanvasSizes[i];
-    const step = resizeStep * Math.pow(2, i);
-    const newHeight = Math.max(1, base.height + step);
-    const newWidth = Math.max(1, base.width + step);
-    canvas.style.height = `${newHeight}px`;
-    canvas.style.width = `${newWidth}px`;
-    canvas.style.borderTop = `${border}px solid hsl(${Math.random() * 90 + 180}, 70%, 60%)`;
+// Circle action for clos/open menu
+function OpenMenuAnimation(action, border, color1, color2) {
+  action ?
+    EditStyle(symbols, { scale: "5", filter: "blur(0.5px)" })
+    : EditStyle(symbols, { scale: "1.5", filter: "blur(0px)" });
+  symbols.querySelectorAll("canvas").forEach((canvas) => {
+    canvas.style.borderTop = `${border}px solid hsl(${Math.random() * 90 + 180},${color1}% , ${color2}%)`;
   });
 }
 
 // Toggle hidden menu content
 const ToggleHiddenMenu = () => Menu.querySelectorAll("div").forEach(div => { div.classList.toggle("hiddenContent") });
 
-// Open and close menu
+// Open and close menu under observation of userdevice
 let MenuOpen = false;
 let meunEvent = null;
 window.matchMedia("(pointer: coarse)").matches ? meunEvent = "click" : meunEvent = "mouseenter";
 handleEvent(Menu, "add", meunEvent, OpenMenu)
 
-// Open Menu
+// Open menu
 let menuStart = false
 function OpenMenu() {
+  // Executed every time menu is closed
   if (!MenuOpen) {
     Menu.style.cssText = "height: 500px; width: 300px;";
-    resizeMenuAnimation(1, 3);
+    OpenMenuAnimation(true, 3, 70, 60);
     ToggleHiddenMenu();
-    symbols.style.animation = "resize 20s infinite";
     MenuOpen = true;
   }
 
   // First menu open
   if (!menuStart) {
-    Menu.style.top = "15px";
-    Menu.style.left = "15px"
     document.body.style.backgroundColor = "black";
-    menuStart = true
+    createStar()
+    symbols.style.opacity = 0.75;
+    EditStyle(Menu, { top: "15px", left: "15px" });
+    menuStart = true;
     Menu.classList.toggle("centeredObject");
   }
 }
 
 // Close menu on exit click
 function CloseMenu() {
+
+  // Ensure complete close animation
   handleEvent(Menu, "remove", meunEvent, OpenMenu);
   setTimeout(() => { handleEvent(Menu, "add", meunEvent, OpenMenu) }, 1500);
+
   setTimeout(() => {
-    Menu.style.cssText = "height: 90px; width: 90px;";
+    EditStyle(Menu, { height: "90px", width: "90px" });
     ToggleHiddenMenu();
-    resizeMenuAnimation(-1, 3);
+    OpenMenuAnimation(false, 2, 100, 60);
   }, 500);
-  symbols.style.animation = "shrink 0.75s forwards";
   MenuOpen = false;
 }
-// Create star background
+// Create star background with canvas
+let createStars = true
 function createStar() {
-  console.log("test");
   const star = document.createElement("canvas");
   star.className = "star centeredObject";
-  const size = getRandomInt(1,2)
-  star.style.width= `${size}px`;
-  star.style.height= `${size}px`;
-  star.style.left= `${getRandomInt(0,window.innerWidth)}px`;
-  star.style.top= `${getRandomInt(0,window.innerHeight)}px`;
-  star.style.animation= "glow 2.5s infinite";
+  const size = getRandomInt(1, 2)
+  EditStyle(star, {
+    width: `${size}px`,
+    height: `${size}px`,
+    left: `${getRandomInt(0, window.innerWidth)}px`,
+    top: `${getRandomInt(0, window.innerHeight)}px`,
+    animation: "glow 2.5s infinite"
+  });
   document.body.appendChild(star);
   setTimeout(() => star.remove(), 2500);
-  setTimeout(createStar, 10);
+  createStars ? setTimeout(createStar, 10) : null;
+}
+
+// Start Game
+const canvas = document.getElementById("gameContainer")
+const ctx = canvas.getContext("2d");
+
+function newGame() {
+  createStars = false;
+  // Wait until image is loaded
+
+playerImage.onload = () => { update(); };
+playerImage.src = "player.png";
+
+  playerImage.onload = () => { update(); };
+  canvas.classList.remove("hiddenContent");
+}
+
+const playerImage = new Image();
+
+const player = {
+  x: 50,            // position X
+  y: canvas.height, // position Y
+  width: 10,        // size
+  height: 15,
+  dx: 0,            // horizontal velocity "deltaX"
+  dy: 0,            // vertical velocity "deltaY"
+  speed: 2,         // how fast player moves left/right
+  jumpPower: -4,   // how strong the jump is
+  gravity: 0.25,     // gravity force
+  onGround: false
+};
+
+// Keys
+let keys = {};
+document.addEventListener("keydown", e => keys[e.code] = true);
+document.addEventListener("keyup", e => keys[e.code] = false);
+
+// Game loop
+function update() {
+  // Horizontal movement
+  if (keys["ArrowRight"]) player.dx = player.speed;
+  else if (keys["ArrowLeft"]) player.dx = -player.speed;
+  else player.dx = 0;
+
+  // Jump
+  if (keys["Space"] && player.onGround) {
+    player.dy = player.jumpPower;
+    player.onGround = false;
+  }
+
+  // Gravity
+  player.dy += player.gravity;
+
+  // position update
+  player.x += player.dx;
+  player.y += player.dy;
+
+  // floor collision
+  if (player.y + player.height >= canvas.height) {
+    player.y = canvas.height - player.height;
+    player.dy = 0;
+    player.onGround = true;
+  }
+
+  // Collision right wall
+  if(player.x + player.width >= canvas.width){
+    player.x = canvas.width - player.width-1;
+    player.dx = 0; //Reset deltaX to prevent useless calculations when there is no player input 
+  }
+  if (player.x <= 0) {
+    player.x = 1
+    player.dx = 0; //Reset deltaY to prevent useless calculations when there is no player input 
+  }
+
+  // --- DRAW ---
+  ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+  // Draw player PNG
+  ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+
+  requestAnimationFrame(update);
 }
