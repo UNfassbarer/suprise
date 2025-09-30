@@ -182,6 +182,14 @@ const player = {
   gravity: 0.25,     // gravity force
   onGround: false
 };
+const structure = {
+x: canvas.width/2,
+y: canvas.height,
+width: 10,
+height: 10,
+dx: 0,
+speed: 0.5,
+}
 
 // Keys
 let keys = {};
@@ -190,16 +198,23 @@ document.addEventListener("keyup", e => keys[e.code] = false);
 
 // Game loop
 function update() {
-  // Horizontal movement
-  if (keys["ArrowRight"]) player.dx = player.speed;
-  else if (keys["ArrowLeft"]) player.dx = -player.speed;
-  else player.dx = 0;
+  if(getRandomInt(1,20)===20){
 
-  // Jump
-  if (keys["Space"] && player.onGround) {
-    player.dy = player.jumpPower;
-    player.onGround = false;
   }
+
+  // Horizontal movement
+if (keys["ArrowRight"] || keys["KeyD"]) {
+  player.dx = player.speed;   // Right arrow OR D
+} else if (keys["ArrowLeft"] || keys["KeyA"]) {
+  player.dx = -player.speed;  // Left arrow OR A
+} else {
+  player.dx = 0;//Unless player will keep speed
+}
+
+if ((keys["ArrowUp"] || keys["Space"]) && player.onGround) {
+  player.dy = player.jumpPower; // Up arrow or space
+  player.onGround = false;
+}
 
   // Gravity
   player.dy += player.gravity;
