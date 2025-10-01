@@ -157,22 +157,34 @@ function createStar() {
 const canvas = document.getElementById("gameContainer")
 const ctx = canvas.getContext("2d");
 
+const playerImage = new Image();
+const structureImage = new Image();
+
+// Load new game and reset background and old values
 function newGame() {
   createStars = false;
-  // Wait until image is loaded
-
-playerImage.onload = () => { update(); };
-playerImage.src = "player.png";
-
-  playerImage.onload = () => { update(); };
   canvas.classList.remove("hiddenContent");
-}
+  playerImage.src = "player.png";
+  structureImage.src = "structureIMG.png";
 
-const playerImage = new Image();
+  // start loop only after both images loaded
+  let imagesLoaded = 0;
+  [playerImage, structureImage].forEach(img => {
+    img.onload = () => {
+      imagesLoaded++;
+      if (imagesLoaded === 2) {
+        update();
+      }
+    };
+    img.onerror = () => {
+      console.error(`Failed to load: ${img.src}`);
+    };
+  });
+}
 
 const player = {
   x: 50,            // position X
-  y: canvas.height, // position Y
+  y: canvas.height-15, // position Y
   width: 10,        // size
   height: 15,
   dx: 0,            // horizontal velocity "deltaX"
@@ -182,13 +194,14 @@ const player = {
   gravity: 0.25,     // gravity force
   onGround: false
 };
+
 const structure = {
-x: canvas.width/2,
-y: canvas.height,
-width: 10,
-height: 10,
-dx: 0,
-speed: 0.5,
+  x: 100,            // position X
+  y: canvas.height-10, // position Y
+  width: 10,        // size
+  height: 10,
+  dx: 0.5,            // horizontal velocity "deltaX"
+  speed: 0,         // how fast player moves left/right
 }
 
 // Keys
@@ -198,23 +211,24 @@ document.addEventListener("keyup", e => keys[e.code] = false);
 
 // Game loop
 function update() {
-  if(getRandomInt(1,20)===20){
+
+  if (getRandomInt(1, 20) === 20) {
 
   }
 
   // Horizontal movement
-if (keys["ArrowRight"] || keys["KeyD"]) {
-  player.dx = player.speed;   // Right arrow OR D
-} else if (keys["ArrowLeft"] || keys["KeyA"]) {
-  player.dx = -player.speed;  // Left arrow OR A
-} else {
-  player.dx = 0;//Unless player will keep speed
-}
+  if (keys["ArrowRight"] || keys["KeyD"]) {
+    player.dx = player.speed;   // Right arrow OR D
+  } else if (keys["ArrowLeft"] || keys["KeyA"]) {
+    player.dx = -player.speed;  // Left arrow OR A
+  } else {
+    player.dx = 0; //Unless player will keep speed
+  }
 
-if ((keys["ArrowUp"] || keys["Space"]) && player.onGround) {
-  player.dy = player.jumpPower; // Up arrow or space
-  player.onGround = false;
-}
+  if ((keys["ArrowUp"] || keys["Space"]) && player.onGround) {
+    player.dy = player.jumpPower; // Up arrow or space
+    player.onGround = false;
+  }
 
   // Gravity
   player.dy += player.gravity;
@@ -222,6 +236,7 @@ if ((keys["ArrowUp"] || keys["Space"]) && player.onGround) {
   // position update
   player.x += player.dx;
   player.y += player.dy;
+  structure.x -= structure.dx
 
   // floor collision
   if (player.y + player.height >= canvas.height) {
@@ -231,8 +246,8 @@ if ((keys["ArrowUp"] || keys["Space"]) && player.onGround) {
   }
 
   // Collision right wall
-  if(player.x + player.width >= canvas.width){
-    player.x = canvas.width - player.width-1;
+  if (player.x + player.width >= canvas.width) {
+    player.x = canvas.width - player.width - 1;
     player.dx = 0; //Reset deltaX to prevent useless calculations when there is no player input 
   }
   if (player.x <= 0) {
@@ -243,8 +258,9 @@ if ((keys["ArrowUp"] || keys["Space"]) && player.onGround) {
   // --- DRAW ---
   ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 
-  // Draw player PNG
+  // Draw player and structure PNG
   ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+  ctx.drawImage(structureImage, structure.x, structure.y, structure.width, structure.height);
 
   requestAnimationFrame(update);
 }
