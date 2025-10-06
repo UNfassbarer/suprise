@@ -154,67 +154,97 @@ function createStar() {
 }
 
 // Start Game
-const canvas = document.getElementById("gameContainer")
+const canvas = document.getElementById("gameContainer");
 const ctx = canvas.getContext("2d");
 
 const playerImage = new Image();
 const structureImage = new Image();
+const spikeImage = new Image();
 
 // Load new game and reset background and old values
 function newGame() {
   createStars = false;
   canvas.classList.remove("hiddenContent");
-  playerImage.src = "player.png";
-  structureImage.src = "structureIMG.png";
 
-  // start loop only after both images loaded
-  let imagesLoaded = 0;
-  [playerImage, structureImage].forEach(img => {
+  const images = [playerImage, structureImage, spikeImage];
+  const sources = ["img/player.png", "img/structureIMG.png", "img/spike.png"];
+
+  images.forEach((img, i) => {
+    img.src = sources[i];
     img.onload = () => {
-      imagesLoaded++;
-      if (imagesLoaded === 2) {
-        update();
-      }
-    };
-    img.onerror = () => {
-      console.error(`Failed to load: ${img.src}`);
+      update();
     };
   });
 }
 
 const player = {
   x: 50,            // position X
-  y: canvas.height-15, // position Y
+  y: canvas.height - 16, // position Y
   width: 10,        // size
-  height: 15,
+  height: 16,
   dx: 0,            // horizontal velocity "deltaX"
   dy: 0,            // vertical velocity "deltaY"
-  speed: 2,         // how fast player moves left/right
-  jumpPower: -4,   // how strong the jump is
-  gravity: 0.25,     // gravity force
+  speed: 0.7,         // how fast player moves left/right
+  jumpPower: -3,   // how strong the jump is
+  gravity: 0.1,     // gravity force
   onGround: false
 };
 
-const structure = {
-  x: 100,            // position X
-  y: canvas.height-10, // position Y
-  width: 10,        // size
-  height: 10,
-  dx: 0.5,            // horizontal velocity "deltaX"
-  speed: 0,         // how fast player moves left/right
+const obstacle = class {
+  constructor(x, y, width, height, dx) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.dx = dx;
+  }
 }
+class spike extends obstacle { }
 
 // Keys
 let keys = {};
 document.addEventListener("keydown", e => keys[e.code] = true);
 document.addEventListener("keyup", e => keys[e.code] = false);
 
+let obstacles = [];
+let spikes = [];
+let obstacleSpawnTimer = 0;
+
 // Game loop
 function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 
-  if (getRandomInt(1, 20) === 20) {
-
+  // Occasionally spawn new obstacles
+  obstacleSpawnTimer++;
+  if (obstacleSpawnTimer === 100) {
+    spikes.push(
+      new spike(
+        canvas.width,
+        canvas.height - 10,
+        4,
+        18,
+        0.8
+      )
+    );
   }
+
+  if (obstacleSpawnTimer === 200) {
+    let height = getRandomInt(5, 10);
+    obstacles.push(
+      new obstacle(
+        canvas.width,
+        canvas.height - height,
+        getRandomInt(10, 25),
+        height,
+        0.8
+      )
+    );
+    obstacleSpawnTimer = 0;
+  }
+
+  // Move and draw obstacles
+  manageObjects(obstacles, structureImage);
+  manageObjects(spikes, spikeImage);
 
   // Horizontal movement
   if (keys["ArrowRight"] || keys["KeyD"]) {
@@ -236,7 +266,6 @@ function update() {
   // position update
   player.x += player.dx;
   player.y += player.dy;
-  structure.x -= structure.dx
 
   // floor collision
   if (player.y + player.height >= canvas.height) {
@@ -255,12 +284,48 @@ function update() {
     player.dx = 0; //Reset deltaY to prevent useless calculations when there is no player input 
   }
 
-  // --- DRAW ---
-  ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-
-  // Draw player and structure PNG
+  // Draw player
   ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
-  ctx.drawImage(structureImage, structure.x, structure.y, structure.width, structure.height);
 
   requestAnimationFrame(update);
+}
+
+function manageObjects(object, image) {
+  for (let i = object.length - 1; i >= 0; i--) {
+    const o = object[i];
+    o.x -= o.dx;
+
+    ctx.drawImage(image, o.x, o.y, o.width, o.height);
+
+    // Remove obstacles that move off screen
+    o.x + o.width < 0 ? object.splice(i, 1) : null;
+
+    // Vertical collision with obstacles
+    if (
+      object === obstacles &&
+      player.y + player.height > o.y &&        // player bottom below obstacle top
+      player.y < o.y &&                        // player top above obstacle top
+      player.x + player.width > o.x &&         // player right overlaps obstacle left
+      player.x < o.x + o.width &&              // player left overlaps obstacle right
+      player.dy > 0                            // player is falling down
+    ) {
+      // Snap player to top of obstacle
+      player.y = o.y - player.height;
+      player.dy = 0;
+      player.onGround = true;
+    }
+
+    if (object === spikes &&
+      player.x < o.x + o.width &&
+      player.x + player.width > o.x &&
+      player.y < o.y + o.height &&
+      player.y + player.height > o.y
+
+
+
+    ) {
+ console.log("💀 Player hit a spike! Game Over!");
+
+    }
+  }
 }
