@@ -162,6 +162,7 @@ const structureImage = new Image();
 const spikeImage = new Image();
 
 // Load new game and reset background and old values
+let proceed = null;
 function newGame() {
   createStars = false;
   canvas.classList.remove("hiddenContent");
@@ -172,6 +173,7 @@ function newGame() {
   images.forEach((img, i) => {
     img.src = sources[i];
     img.onload = () => {
+      proceed = true
       update();
     };
   });
@@ -187,7 +189,7 @@ const player = {
   speed: 0.7,         // how fast player moves left/right
   jumpPower: -3,   // how strong the jump is
   gravity: 0.1,     // gravity force
-  onGround: false
+  onGround: true
 };
 
 const obstacle = class {
@@ -287,7 +289,7 @@ function update() {
   // Draw player
   ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
 
-  requestAnimationFrame(update);
+  proceed ? requestAnimationFrame(update) : console.log("Waiting for user input");
 }
 
 function manageObjects(object, image) {
@@ -324,8 +326,20 @@ function manageObjects(object, image) {
 
 
     ) {
- console.log("💀 Player hit a spike! Game Over!");
+      resetGame()
+      console.log("💀 Player hit a spike! Game Over!");
 
     }
   }
+}
+
+function resetGame() {
+  obstacles = [];
+  spikes = [];
+  player.x = 50;
+  player.y = canvas.height - 16;
+  player.dx = 0;
+  player.dy = 0;
+  player.onGround = true;
+  proceed = false
 }

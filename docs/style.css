@@ -195,10 +195,38 @@ ul {
 }
 
 /* Game Box */
-.gameBox{
+.gameBox {
   position: absolute;
   height: 300px;
   width: 500px;
   outline: rgb(255, 4, 226) 2px solid;
   z-index: 0;
+}
+
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+#gameOver {
+  position: absolute;
+  outline: rgb(255, 4, 226) 2px solid;
+  font-size: 4rem;
+  font-weight: 900;
+  letter-spacing: 10px;
+  text-transform: uppercase;
+  background: linear-gradient(270deg, #ff2e63, #04c8de, #ff9a00);
+  background-size: 600% 600%;
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  animation: gradientFlow 8s ease infinite;
 }
