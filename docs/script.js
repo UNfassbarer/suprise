@@ -218,19 +218,19 @@ function update() {
 
   // Occasionally spawn new obstacles
   obstacleSpawnTimer++;
-  if (obstacleSpawnTimer === 100) {
+  if (obstacleSpawnTimer === 200) {
     spikes.push(
       new spike(
         canvas.width,
         canvas.height - 10,
         4,
         18,
-        0.8
+        0.5
       )
     );
   }
 
-  if (obstacleSpawnTimer === 200) {
+  if (obstacleSpawnTimer === 400) {
     let height = getRandomInt(5, 10);
     obstacles.push(
       new obstacle(
@@ -238,7 +238,7 @@ function update() {
         canvas.height - height,
         getRandomInt(10, 25),
         height,
-        0.8
+        0.5
       )
     );
     obstacleSpawnTimer = 0;
@@ -328,6 +328,7 @@ function manageObjects(object, image) {
     ) {
       resetGame()
       console.log("💀 Player hit a spike! Game Over!");
+      document.getElementById("gameOver").classList.toggle("hiddenContent")
 
     }
   }

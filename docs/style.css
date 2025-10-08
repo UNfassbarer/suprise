@@ -203,30 +203,19 @@ ul {
   z-index: 0;
 }
 
-@keyframes gradientFlow {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
 #gameOver {
   position: absolute;
-  outline: rgb(255, 4, 226) 2px solid;
-  font-size: 4rem;
+  font-size: 6vw;
   font-weight: 900;
   letter-spacing: 10px;
   text-transform: uppercase;
-  background: linear-gradient(270deg, #ff2e63, #04c8de, #ff9a00);
+  background: linear-gradient(270deg, black, red, magenta, red, black, black);
   background-size: 600% 600%;
   -webkit-text-fill-color: transparent;
   -webkit-background-clip: text;
+  background-clip: text;
   animation: gradientFlow 8s ease infinite;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(12.5deg);
 }
