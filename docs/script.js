@@ -95,9 +95,9 @@ const ToggleHiddenMenu = () => Menu.querySelectorAll("div").forEach(div => { div
 
 // Open and close menu under observation of userdevice
 let MenuOpen = false;
-let meunEvent = null;
-window.matchMedia("(pointer: coarse)").matches ? meunEvent = "click" : meunEvent = "mouseenter";
-handleEvent(Menu, "add", meunEvent, OpenMenu)
+let menuEvent = null;
+window.matchMedia("(pointer: coarse)").matches ? menuEvent = "click" : menuEvent = "mouseenter";
+handleEvent(Menu, "add", menuEvent, OpenMenu)
 
 // Open menu
 let menuStart = false
@@ -125,8 +125,8 @@ function OpenMenu() {
 function CloseMenu() {
 
   // Ensure complete close animation
-  handleEvent(Menu, "remove", meunEvent, OpenMenu);
-  setTimeout(() => { handleEvent(Menu, "add", meunEvent, OpenMenu) }, 1500);
+  handleEvent(Menu, "remove", menuEvent, OpenMenu);
+  setTimeout(() => { handleEvent(Menu, "add", menuEvent, OpenMenu) }, 1500);
 
   setTimeout(() => {
     EditStyle(Menu, { height: "90px", width: "90px" });
@@ -160,23 +160,28 @@ const ctx = canvas.getContext("2d");
 const playerImage = new Image();
 const structureImage = new Image();
 const spikeImage = new Image();
+const icelandImage = new Image();
 
 // Load new game and reset background and old values
 let proceed = null;
+let imgCounter = 0;
+const images = [playerImage, structureImage, spikeImage, icelandImage];
+const sources = ["img/player.png", "img/structureIMG.png", "img/spike.png", "img/iceland.png"];
+images.forEach((img, i) => {
+  img.src = sources[i];
+  img.onload = () => {
+    imgCounter++;
+  };
+});
+
 function newGame() {
   createStars = false;
   canvas.classList.remove("hiddenContent");
-
-  const images = [playerImage, structureImage, spikeImage];
-  const sources = ["img/player.png", "img/structureIMG.png", "img/spike.png"];
-
-  images.forEach((img, i) => {
-    img.src = sources[i];
-    img.onload = () => {
-      proceed = true
-      update();
-    };
-  });
+  if (imgCounter === images.length) {
+    proceed = true
+    update();
+    imgCounter = 0;
+  }
 }
 
 const player = {
@@ -202,6 +207,7 @@ const obstacle = class {
   }
 }
 class spike extends obstacle { }
+class iceland extends obstacle { }
 
 // Keys
 let keys = {};
@@ -210,43 +216,97 @@ document.addEventListener("keyup", e => keys[e.code] = false);
 
 let obstacles = [];
 let spikes = [];
+let icelands = [];
 let obstacleSpawnTimer = 0;
 
 // Game loop
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 
-  // Occasionally spawn new obstacles
+  // Occasionally spawn new obstacles and spikes
   obstacleSpawnTimer++;
-  if (obstacleSpawnTimer === 200) {
-    spikes.push(
-      new spike(
-        canvas.width,
-        canvas.height - 10,
-        4,
-        18,
-        0.5
-      )
-    );
-  }
 
-  if (obstacleSpawnTimer === 400) {
-    let height = getRandomInt(5, 10);
-    obstacles.push(
-      new obstacle(
-        canvas.width,
-        canvas.height - height,
-        getRandomInt(10, 25),
+
+  // if (obstacleSpawnTimer === 200) {
+  //   spikes.push(
+  //     new spike(
+  //       canvas.width,
+  //       canvas.height - 10,
+  //       4,
+  //       18,
+  //       1
+  //     )
+  //   );
+  // }
+
+  // if (obstacleSpawnTimer === 400) {
+  //   let height = getRandomInt(5, 10);
+  //   obstacles.push(
+  //     new obstacle(
+  //       canvas.width,
+  //       canvas.height - height,
+  //       getRandomInt(20, 35),
+  //       height,
+  //       1
+  //     )
+  //   );
+  // }
+
+  //Create flying iseland
+  if (obstacleSpawnTimer === 150) {
+    const height = getRandomInt(6, 8);
+    const x = canvas.width;
+    const y = canvas.height - getRandomInt(30, 60) - height;
+    const widthIceland = getRandomInt(35, 45)
+    icelands.push(
+      new iceland(
+        x,
+        y,
+        widthIceland,
         height,
-        0.5
+        1
       )
-    );
+    )
+
+    // Spawn rotated spikes on the flying island
+    if (true) { //Spawn spikes on iseland?
+      const widthSpike = 6
+      const counterSpikes = Math.floor(widthIceland / widthSpike); //Clear number of max. spikes that can spawn
+      console.log(counterSpikes)
+
+      // How much spikes aktually to spawn? 
+      if (false) { // 1 spike
+        spikes.push(
+          new spike(
+            x + getRandomInt(0, widthIceland - widthSpike),
+            y + height,
+            widthSpike,
+            8,
+            1
+          )
+        )
+      } else { // Multiple spikes
+        let deltaX = 0;
+        let xSpikes = x + getRandomInt(0, widthIceland - widthSpike * counterSpikes);
+        for (let i = 0; i < counterSpikes; i++) {
+          spikes.push(
+            xSpikes + deltaX,
+            y + height,
+            widthSpike,
+            8,
+            1
+          )
+          deltaX += widthSpike * 2;
+        }
+      }
+    }
     obstacleSpawnTimer = 0;
   }
 
   // Move and draw obstacles
   manageObjects(obstacles, structureImage);
   manageObjects(spikes, spikeImage);
+  manageObjects(icelands, icelandImage)
 
   // Horizontal movement
   if (keys["ArrowRight"] || keys["KeyD"]) {
@@ -304,12 +364,12 @@ function manageObjects(object, image) {
 
     // Vertical collision with obstacles
     if (
-      object === obstacles &&
-      player.y + player.height > o.y &&        // player bottom below obstacle top
-      player.y < o.y &&                        // player top above obstacle top
-      player.x + player.width > o.x &&         // player right overlaps obstacle left
-      player.x < o.x + o.width &&              // player left overlaps obstacle right
-      player.dy > 0                            // player is falling down
+      object != spikes &&
+      player.dy > 0 && // player is falling down
+      player.y + player.height > o.y && // player's bottom is below obstacle's top
+      player.y + player.height - player.dy <= o.y && // player's bottom was above obstacle's top last frame (AI improvement)
+      player.x + player.width > o.x && // player right overlaps obstacle left
+      player.x < o.x + o.width // player left overlaps obstacle right
     ) {
       // Snap player to top of obstacle
       player.y = o.y - player.height;
@@ -322,9 +382,6 @@ function manageObjects(object, image) {
       player.x + player.width > o.x &&
       player.y < o.y + o.height &&
       player.y + player.height > o.y
-
-
-
     ) {
       resetGame()
       console.log("💀 Player hit a spike! Game Over!");
@@ -337,6 +394,7 @@ function manageObjects(object, image) {
 function resetGame() {
   obstacles = [];
   spikes = [];
+  icelands = [];
   player.x = 50;
   player.y = canvas.height - 16;
   player.dx = 0;

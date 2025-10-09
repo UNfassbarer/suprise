@@ -130,10 +130,14 @@
 @keyframes gradientFlow {
   0% {
     background-position: 0% 50%;
+    scale: 0.5;
+    rotate: 0deg;
   }
 
   50% {
     background-position: 100% 50%;
+    scale: 1.25;
+    rotate: -12.5deg;
   }
 
   100% {
