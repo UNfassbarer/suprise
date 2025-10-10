@@ -197,8 +197,8 @@ ul {
 /* Game Box */
 .gameBox {
   position: absolute;
-  height: 300px;
-  width: 500px;
+  height: 60dvh;
+  width: 90dvw;
   outline: rgb(255, 4, 226) 2px solid;
   z-index: 0;
 }
