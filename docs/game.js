@@ -45,7 +45,7 @@ const player = {
     height: 16,
     dx: 0,            // horizontal velocity "deltaX"
     dy: 0,            // vertical velocity "deltaY"
-    speed: 0.7,         // how fast player moves left/right
+    speed: 0.9,         // how fast player moves left/right
     jumpPower: -3,   // how strong the jump is
     gravity: 0.1,     // gravity force
     onGround: true
@@ -81,7 +81,7 @@ let accumulator = 0;    // Total time accumulated for logic updates
 function gameLoop(timestamp) {
     if (GameOver) return
     if (!last) last = timestamp;
-    let delta = timestamp - last;// time since last frame
+    let delta = timestamp - last; // time since last frame
     last = timestamp;
     accumulator += delta;
     while (accumulator >= timestep) {
@@ -156,14 +156,14 @@ function updateLogic() {
         const counterIcelands = 4; // Number of max. icelands that can spawn
         const count = getRandomInt(1, counterIcelands);
         let DeltaX = 0
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < count; i++) { //Spawn multiple icelands
             const height = getRandomInt(6, 8);
-            const x = canvas.width + DeltaX;
+            const x = canvas.width;
             const y = canvas.height - getRandomInt(30, 60) - height;
-            const widthIceland = getRandomInt(35, 45)
+            const widthIceland = getRandomInt(30, 45)
             icelands.push(
                 new iceland(
-                    x,
+                    x + DeltaX,
                     y,
                     widthIceland,
                     height,
@@ -179,7 +179,7 @@ function updateLogic() {
                 if (getRandomInt(0, 2) === 2) { // 1 spike
                     spikes.push(
                         new spike(
-                            x + getRandomInt(0, widthIceland - widthSpike),
+                            x + getRandomInt(0, widthIceland - widthSpike) + DeltaX,
                             y + height,
                             widthSpike,
                             heightSpike,
@@ -193,7 +193,7 @@ function updateLogic() {
                     for (let i = 0; i < count; i++) {
                         spikes.push(
                             new spike(
-                                xSpikes + deltaX,
+                                xSpikes + deltaX + DeltaX,
                                 y + height,
                                 widthSpike,
                                 heightSpike,
@@ -204,7 +204,7 @@ function updateLogic() {
                     }
                 }
             }
-            DeltaX += getRandomInt(widthIceland, widthIceland * 2)
+            DeltaX += getRandomInt(widthIceland, widthIceland * 2.5)
         }
         obstacleSpawnTimer = 0;
     }
