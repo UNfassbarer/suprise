@@ -1,11 +1,11 @@
 // Start Game
 const canvas = document.getElementById("gameContainer");
 const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
 
 // Load new game and reset background and old values
 let imgCounter = 0;
 let games = 0;
-let userPlaying = false;
 let GameOver = true;
 
 const playerImage = new Image();
@@ -24,7 +24,6 @@ images.forEach((img, i) => {
 });
 
 function newGame() {
-    if (userPlaying) return
     if (GameOver) {
         GameOver = false;
         document.getElementById("gameOver").classList.add("hiddenContent");
@@ -33,17 +32,18 @@ function newGame() {
         canvas.classList.remove("hiddenContent");
         if (imgCounter === images.length) requestAnimationFrame(gameLoop);
     }
+
 }
 
 const player = {
     x: 50,            // position X
     y: canvas.height - 16, // position Y
-    width: 10,        // size
-    height: 16,
+    width: 12,        // size
+    height: 24,
     dx: 0,            // horizontal velocity "deltaX"
     dy: 0,            // vertical velocity "deltaY"
     speed: 0.9,         // how fast player moves left/right
-    jumpPower: -3,   // how strong the jump is
+    jumpPower: -4,   // how strong the jump is
     gravity: 0.1,     // gravity force
     onGround: true
 };
@@ -104,9 +104,10 @@ function renderLogic() {
     ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
 }
 
-const widthSpike = 6;
-const heightSpike = 8;
-const objectSpeed = 0.75;
+const widthSpike = 12;
+const heightSpike = 14;
+const objectSpeed = 1;
+const universalSize = player.height;
 
 // Game loop
 function updateLogic() {
@@ -138,8 +139,8 @@ function updateLogic() {
         const count = getRandomInt(1, counterObstacles);
         let deltaX = 0
         for (let i = 0; i < count; i++) {
-            const height = getRandomInt(5, 10);
-            const width = getRandomInt(20, 35);
+            const height = getRandomInt(player.height / 4, player.height / 2);
+            const width = getRandomInt(player.height, player.height * 3);
             obstacles.push(
                 new obstacle(
                     canvas.width + deltaX,
@@ -160,9 +161,9 @@ function updateLogic() {
         let DeltaX = 0
         const x = canvas.width;
         for (let i = 0; i < count; i++) { //Spawn multiple icelands
-            const height = getRandomInt(6, 8);
-            const y = canvas.height - getRandomInt(30, 60) - height;
-            const widthIceland = getRandomInt(30, 45)
+            const height = getRandomInt(player.height / 4, player.height / 2);
+            const widthIceland = getRandomInt(player.height * 1.5, player.height * 3);
+            const y = canvas.height - getRandomInt(player.height * 2, player.height * 3) - height;
             icelands.push(
                 new iceland(
                     x + DeltaX,
@@ -214,9 +215,9 @@ function updateLogic() {
     // Create portals
     if (obstacleSpawnTimer === 700) {
         const counterPortals = 2; // Number of portals to spawn
-        const height = 20;
+        const height = player.height * 1.5;
         const width = 25;
-        let deltaX = getRandomInt(canvas.width / 5, canvas.width / 2);
+        let deltaX = 0;
         for (let i = 1; i < counterPortals + 1; i++) {
             const x = canvas.width + deltaX;
             const y = canvas.height - height;
@@ -320,7 +321,8 @@ function updateObjects(object) {
         // Player & portal collision
         if (object === portals &&
             portals.length > 1 &&
-            player.y + player.height >= o.y + o.height
+            portals.length < 3 &&
+            player.y + player.height > o.y
         ) {
 
             // Portal collision detection
@@ -347,7 +349,6 @@ function updateObjects(object) {
 
 function resetGame() {
     GameOver = true;
-    userPlaying = false;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     document.getElementById("gameOver").classList.toggle("hiddenContent")
     obstacles = [];

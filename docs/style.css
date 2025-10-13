@@ -197,8 +197,13 @@ ul {
 /* Game Box */
 .gameBox {
   position: absolute;
+
   height: 60dvh;
   width: 90dvw;
+
+  /* width: 600px;
+  height: 400px; */
+
   outline: rgb(255, 4, 226) 2px solid;
   z-index: 0;
 }
