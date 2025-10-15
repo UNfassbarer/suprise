@@ -1,7 +1,6 @@
 // Start Game
 const canvas = document.getElementById("gameContainer");
 const ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
 
 // Load new game and reset background and old values
 let imgCounter = 0;
@@ -13,9 +12,10 @@ const structureImage = new Image();
 const spikeImage = new Image();
 const icelandImage = new Image();
 const portalImage = new Image();
+const R_SpikeImage = new Image();
 
-const images = [playerImage, structureImage, spikeImage, icelandImage, portalImage];
-const sources = ["img/player.png", "img/structureIMG.png", "img/spike.png", "img/iceland.png", "img/portal.png"];
+const images = [playerImage, structureImage, spikeImage, R_SpikeImage, icelandImage, portalImage];
+const sources = ["img/player.png", "img/structureIMG.png", "img/spike.png", "img/R_spike.png", "img/iceland.png", "img/portal.png"];
 images.forEach((img, i) => {
     img.src = sources[i];
     img.onload = () => {
@@ -42,7 +42,7 @@ const player = {
     height: 24,
     dx: 0,            // horizontal velocity "deltaX"
     dy: 0,            // vertical velocity "deltaY"
-    speed: 0.9,         // how fast player moves left/right
+    speed: 0.75,         // how fast player moves left/right
     jumpPower: -4,   // how strong the jump is
     gravity: 0.1,     // gravity force
     onGround: true
@@ -68,24 +68,14 @@ let keys = {};
 document.addEventListener("keydown", e => keys[e.code] = true);
 document.addEventListener("keyup", e => keys[e.code] = false);
 
-const timestep = 1000 / 60; //60 FPS
-let last = 0;           // Timestamp of last frame
-let accumulator = 0;    // Total time accumulated for logic updates
-function gameLoop(timestamp) {
-    if (GameOver) return
-    if (!last) last = timestamp;
-    let delta = timestamp - last; // time since last frame
-    last = timestamp;
-    accumulator += delta;
-    while (accumulator >= timestep) {
-        updateLogic();           // Update game state (movement, collisions, etc.)
-        accumulator -= timestep; // Remove processed time
-    }
-    renderLogic();// Render
-    requestAnimationFrame(gameLoop);
+function gameLoop() {
+    updateLogic();
+    renderLogic();
+    if (!GameOver) requestAnimationFrame(gameLoop);
+
 }
 
-let obstacles = [], spikes = [], icelands = [], portals = [];
+let obstacles = [], spikes = [], R_spikes = [], icelands = [], portals = [];
 const portalMap = new Map();
 let obstacleSpawnTimer = 0;
 
@@ -98,19 +88,26 @@ function renderLogic() {
     drawObjects(obstacles, structureImage);
     drawObjects(icelands, icelandImage)
     drawObjects(spikes, spikeImage);
+    drawObjects(R_spikes, R_SpikeImage)
     drawObjects(portals, portalImage);
 
     // Draw player
-    ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+    // ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+    ctx.drawImage(playerImage, Math.round(player.x), Math.round(player.y), Math.round(player.width), Math.round(player.height));
+
 }
 
-const widthSpike = 12;
-const heightSpike = 14;
+// const widthSpike = player.width;
+// const heightSpike = player.width;
+
+const widthSpike = 8;
+const heightSpike = 8;
 const objectSpeed = 1;
 const universalSize = player.height;
 
 // Game loop
 function updateLogic() {
+    console.log(obstacleSpawnTimer)
 
     // Create ground spikes
     obstacleSpawnTimer++;
@@ -177,32 +174,31 @@ function updateLogic() {
             // Spawn rotated spikes on the flying island
             if (getRandomInt(0, 1) === 1) { //Spawn spikes on iseland?
                 const counterSpikes = Math.floor(widthIceland / widthSpike); //Clear number of max. spikes that can spawn
-
                 // How much spikes aktually to spawn? 
                 if (getRandomInt(0, 2) === 2) { // 1 spike
-                    spikes.push(
-                        new spike(
-                            x + getRandomInt(0, widthIceland - widthSpike) + DeltaX,
-                            y + height,
-                            widthSpike,
-                            heightSpike,
-                            objectSpeed
-                        )
+
+                    const newSpike = new spike(
+                        x + getRandomInt(0, widthIceland - widthSpike) + DeltaX,
+                        y + height,
+                        widthSpike,
+                        heightSpike,
+                        objectSpeed
                     )
+                    R_spikes.push(newSpike)
+
                 } else { // Multiple spikes
                     let deltaX = 0;
                     let xSpikes = x + getRandomInt(0, widthIceland - widthSpike * counterSpikes);
                     const count = getRandomInt(2, counterSpikes)
                     for (let i = 0; i < count; i++) {
-                        spikes.push(
-                            new spike(
-                                xSpikes + deltaX + DeltaX,
-                                y + height,
-                                widthSpike,
-                                heightSpike,
-                                objectSpeed
-                            )
+                        const newSpike = new spike(
+                            xSpikes + deltaX + DeltaX,
+                            y + height,
+                            widthSpike,
+                            heightSpike,
+                            objectSpeed
                         )
+                        R_spikes.push(newSpike)
                         deltaX += widthSpike * counterSpikes / count; //Spread spikes evenly to each other over the island
                     }
                 }
@@ -233,12 +229,14 @@ function updateLogic() {
     updateObjects(obstacles);
     updateObjects(icelands)
     updateObjects(spikes);
+    updateObjects(R_spikes);
     updateObjects(portals);
     updatePlayer();
 }
 
 function drawObjects(object, image) {
     for (const o of object) {
+        // ctx.drawImage(image, Math.round(o.x), Math.round(o.y), Math.round(o.width), Math.round(o.height));
         ctx.drawImage(image, o.x, o.y, o.width, o.height);
     }
 }
@@ -298,6 +296,7 @@ function updateObjects(object) {
         if (
             object != spikes && // Not spikes
             object != portals && // Not portals
+            object != R_spikes &&
             player.dy > 0 && // player is falling down
             player.y + player.height > o.y && // player's bottom is below obstacle's top
             player.y + player.height - player.dy <= o.y && // player's bottom was above obstacle's top last frame (AI improvement)
@@ -310,13 +309,12 @@ function updateObjects(object) {
             player.onGround = true;
         }
 
-        if (object === spikes &&
+        if ((object === spikes || object === R_spikes) &&
             player.x < o.x + o.width &&
             player.x + player.width > o.x &&
             player.y < o.y + o.height &&
             player.y + player.height > o.y
-        ) resetGame()
-
+        ) resetGame();
 
         // Player & portal collision
         if (object === portals &&
@@ -353,6 +351,7 @@ function resetGame() {
     document.getElementById("gameOver").classList.toggle("hiddenContent")
     obstacles = [];
     spikes = [];
+    R_spikes = [];
     icelands = [];
     portals = [];
     portalMap.clear();
