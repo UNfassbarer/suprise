@@ -100,8 +100,8 @@ function renderLogic() {
 
 }
 
-const widthSpike = player.width*(2/3);  //8
-const heightSpike = player.width*(2/3); //8
+const widthSpike = player.width * (2 / 3);  //8
+const heightSpike = player.width * (2 / 3); //8
 const widthOrb = 6;
 const heightOrb = 6;
 const objectSpeed = 1;
@@ -238,31 +238,53 @@ const groundPortals = () => {
     obstacleSpawnTimer = 0;
 }
 
+
+
 const functions = {
     1: groundSpike,
     2: groundObstacle,
-    3: flyingIsaland,
+    3: flyingIsland,
     4: groundPortals
 };
 
-// Game loop
+let updateNumber = undefined;
+
 function updateLogic() {
     obstacleSpawnTimer++;
-    if (obstacleSpawnTimer === 200) {
-        const updateNumber = getRandomInt(1, 4);
-        functions[2]();
-        obstacleSpawnTimer = 0;
 
-        // Spikes --> !Portals
-        // Iselands --> !Iselands
-        // Obstacles (Orbs) --> *Any*
-        // Portals --> !*ANY*
+    if (obstacleSpawnTimer >= 200) {
+        // First spawn ever
+        if (updateNumber === undefined) {
+            updateNumber = getRandomInt(1, 4);
+            functions[updateNumber]();
+        } else {
+            // Spawn based on the previous type
+            switch (updateNumber) {
+                case 1: // Ground Spike
+                    updateNumber = getRandomInt(1, 3);
+                    break;
+                case 2: // Ground Obstacle
+                    updateNumber = getRandomInt(1, 4);
+                    break;
+                case 3: // Flying Island
+                    getRandomInt(1, 2) === 1 ?
+                        updateNumber = getRandomInt(1, 2)
+                        : updateNumber = 4;
+                    break;
+                case 4: // Ground Portal
+                    updateNumber = getRandomInt(2, 3);
+                    break;
+                default:
+                    updateNumber = getRandomInt(1, 4);
+            }
 
-        //Button for actions when touching/pushing
+            functions[updateNumber]();
+        }
 
+        obstacleSpawnTimer = 0; // Reset timer after spawning
     }
 
-    // Manage collisions & movements of all objects
+    // Manage collisions & movements
     updateObjects(obstacles);
     updateObjects(icelands);
     updateObjects(spikes);
@@ -271,6 +293,7 @@ function updateLogic() {
     updateObjects(orbs);
     updatePlayer();
 }
+
 
 function drawObjects(object, image) {
     for (const o of object) {
