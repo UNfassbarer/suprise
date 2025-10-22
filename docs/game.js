@@ -17,13 +17,9 @@ const orbImage = new Image();
 
 const images = [playerImage, structureImage, spikeImage, R_SpikeImage, icelandImage, portalImage, orbImage];
 const sources = ["img/player.png", "img/structureIMG.png", "img/spike.png", "img/R_spike.png", "img/iceland.png", "img/portal.png", "img/orb.png"];
-images.forEach((img, i) => {
-    img.src = sources[i];
-    img.onload = () => {
-        imgCounter++;
-    };
-});
+images.forEach((img, i) => { img.src = sources[i], img.onload = imgCounter++ });
 
+console.log(imgCounter)
 function newGame() {
     if (GameOver) {
         GameOver = false;
@@ -74,12 +70,10 @@ function gameLoop() {
     updateLogic();
     renderLogic();
     if (!GameOver) requestAnimationFrame(gameLoop);
-
 }
 
 let obstacles = [], spikes = [], R_spikes = [], icelands = [], portals = [], orbs = [];
 const portalMap = new Map();
-let obstacleSpawnTimer = 0;
 
 function renderLogic() {
 
@@ -107,19 +101,7 @@ const heightOrb = 6;
 const objectSpeed = 1;
 const universalSize = player.height;
 
-const temporatyOrbs = (oX, oY, oWidth) => {
-    const i = getRandomInt(1, 3)
-    orbs.push(
-        new orb(
-            oX + oWidth / 2 - widthOrb / 2,
-            oY - heightOrb,
-            widthOrb,
-            heightOrb,
-            objectSpeed,
-            i
-        )
-    )
-}
+// let structureLength = 0;
 
 const groundSpike = () => {
     const counterSpikes = 5; // Number of max. spikes that can spawn
@@ -136,7 +118,23 @@ const groundSpike = () => {
             )
         )
         deltaX += widthSpike * counterSpikes / count; //Spread spikes evenly to each other
+        // structureLength += deltaX
     }
+    // structureLength = count * widthSpike
+}
+
+const temporatyOrbs = (oX, oY, oWidth) => {
+    const i = getRandomInt(1, 3)
+    orbs.push(
+        new orb(
+            oX + oWidth / 2 - widthOrb / 2,
+            oY - heightOrb,
+            widthOrb,
+            heightOrb,
+            objectSpeed,
+            i
+        )
+    )
 }
 
 const groundObstacle = () => {
@@ -159,6 +157,7 @@ const groundObstacle = () => {
             )
         )
         deltaX += getRandomInt(width * 2, width * 3) //Spread obstacles randomly to each other
+        // structureLength += deltaX + width;
         if (spawnOrb) {
             temporatyOrbs(x, y, width);
             spawnOrb = false;
@@ -167,7 +166,8 @@ const groundObstacle = () => {
     // if (getRandomInt(1, 20) === 20) 
 }
 
-const flyingIsaland = () => {
+const flyingIsland = () => {
+    // structureLength = 0;
     const counterIcelands = 4; // Number of max. icelands that can spawn
     const count = getRandomInt(1, counterIcelands);
     let DeltaX = 0
@@ -219,13 +219,18 @@ const flyingIsaland = () => {
             }
         }
         DeltaX += getRandomInt(widthIceland * 2, widthIceland * 2.5) //Spread icelands randomly to each other
+        // structureLength += DeltaX + widthIceland;
     }
 }
 
 const groundPortals = () => {
+
+    spawnTimeLimit += spawnTimeLimit;
+
+    // structureLength = 0;
     const counterPortals = 2; // Number of portals to spawn
-    const height = player.height * 1.5;
-    const width = 25;
+    const height = 32;
+    const width = 32;
     let deltaX = 0;
     for (let i = 1; i < counterPortals + 1; i++) {
         const x = canvas.width + deltaX;
@@ -235,10 +240,8 @@ const groundPortals = () => {
         portals.push(newPortal);
         deltaX += getRandomInt(canvas.width / 4, canvas.width / 3);
     }
-    obstacleSpawnTimer = 0;
+    // structureLength += width * counterPortals + deltaX
 }
-
-
 
 const functions = {
     1: groundSpike,
@@ -248,42 +251,25 @@ const functions = {
 };
 
 let updateNumber = undefined;
+let spawnTimeLimit = 200
+let delay = 0;
 
-function updateLogic() {
-    obstacleSpawnTimer++;
-
-    if (obstacleSpawnTimer >= 200) {
-        // First spawn ever
-        if (updateNumber === undefined) {
-            updateNumber = getRandomInt(1, 4);
-            functions[updateNumber]();
-        } else {
-            // Spawn based on the previous type
-            switch (updateNumber) {
-                case 1: // Ground Spike
-                    updateNumber = getRandomInt(1, 3);
-                    break;
-                case 2: // Ground Obstacle
-                    updateNumber = getRandomInt(1, 4);
-                    break;
-                case 3: // Flying Island
-                    getRandomInt(1, 2) === 1 ?
-                        updateNumber = getRandomInt(1, 2)
-                        : updateNumber = 4;
-                    break;
-                case 4: // Ground Portal
-                    updateNumber = getRandomInt(2, 3);
-                    break;
-                default:
-                    updateNumber = getRandomInt(1, 4);
-            }
-
-            functions[updateNumber]();
-        }
-
-        obstacleSpawnTimer = 0; // Reset timer after spawning
+function updateLogicSpawner() {
+    const pattern = [1, 2, 3, 4];
+    for (let i = pattern.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pattern[i], pattern[j]] = [pattern[j], pattern[i]];
     }
 
+
+    
+    setTimeout(() => { functions[pattern[0]](); }, delay * 1000)
+    setTimeout(() => { functions[pattern[1]](); }, delay * 1000)
+    setTimeout(() => { functions[pattern[2]](); }, delay * 1000)
+    setTimeout(() => { functions[pattern[3]](); }, delay * 1000)
+}
+
+function updateLogic() {
     // Manage collisions & movements
     updateObjects(obstacles);
     updateObjects(icelands);
@@ -452,5 +438,4 @@ function resetGame() {
     player.x = 50;
     player.y = canvas.height - player.height;
     player.onGround = true;
-    obstacleSpawnTimer = 0;
 }
