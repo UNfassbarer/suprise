@@ -149,12 +149,13 @@ const groundObstacle = (deltaX) => {
         )
     )
     if (spawnOrb) {
-        temporatyOrbs(x + O_2_DeltaX, y, width);
-        spawnOrb = false;
+        if (getRandomInt(0, 2) === 2) {
+            temporatyOrbs(x + O_2_DeltaX, y, width);
+            spawnOrb = false;
+        }
     }
     O_2_lastWidth = width;
 }
-
 
 let O_3_lastWidth = 0;
 let O_3_DeltaX = 0;
@@ -233,21 +234,16 @@ function createMultibleObjects(func, a, b) {
 
 let lastNum = null;
 function spawnObject() {
-    console.log("Object spawned!");
     const ObjectNum = getRandomInt(1, 4);
     if (ObjectNum === 1) createMultibleObjects(groundSpike, 0, 1), spawnedObject = spikes[spikes.length - 1];
     if (ObjectNum === 2) createMultibleObjects(groundObstacle, 0, 1), spawnedObject = obstacles[obstacles.length - 1];
-
     if (ObjectNum === 3) {
         groundPortals(0);
         groundPortals(1);
         spawnedObject = portals[portals.length - 1];
     }
-    if (ObjectNum === 3) groundPortals(0), groundPortals(1), spawnedObject = portals[portals.length - 1], console.log("Portal spawned!");
-
     if (ObjectNum === 4) createMultibleObjects(flyingIsland, 0, 1), spawnedObject = icelands[icelands.length - 1];
     if (spawnedObject) lastSpawnedObstacle = spawnedObject;
-    // if (!GameOver) setTimeout(() => { spawnObject() }, 2000);
     lastNum = ObjectNum;
 }
 
@@ -278,28 +274,29 @@ function drawObjects(object, image) {
     }
 }
 
+let boosterDelay = 3;
+let playerProtection = false;
 function applyBooster(id) {
-
     if (id === 1) {
         console.log("SPEED")
         const speed = player.speed;
-        player.speed = speed * 1.5;
-        setTimeout(() => { player.speed = speed });
+        player.speed = speed * 2;
+        setTimeout(() => { player.speed = speed }, boosterDelay * 1000);
     }
     if (id === 2) {
         console.log("JUMP POWER")
         const jumpPower = player.jumpPower;
         player.jumpPower = player.jumpPower * 1.25;
-        setTimeout(() => { player.jumpPower = jumpPower });
+        setTimeout(() => { player.jumpPower = jumpPower }, boosterDelay * 1000);
     }
     if (id === 3) {
         console.log("Protection");
         playerProtection = true;
+        setTimeout(() => { playerProtection = false }, boosterDelay * 1000);
     }
 }
 
 function updatePlayer() {
-
     // Horizontal player movement
     if (keys["ArrowRight"] || keys["KeyD"]) {
         player.dx = player.speed;   // Right arrow OR D
@@ -376,7 +373,7 @@ function updateObjects(object) {
             player.onGround = true;
         }
 
-        if (
+        if (!playerProtection &&
             (object === spikes || object === R_spikes) &&
             player.x < o.x + o.width &&
             player.x + player.width > o.x &&
@@ -390,7 +387,6 @@ function updateObjects(object) {
             portals.length < 3 &&
             player.y + player.height > o.y
         ) {
-
             // Portal collision detection
             const leftEntrance =
                 player.x + player.width > o.x &&
@@ -409,7 +405,6 @@ function updateObjects(object) {
             if (rightEntrance && portal1) player.x = portalMap.get(1).x - player.width - 1;
             if (rightEntrance && portal2) player.x = portalMap.get(0).x - player.width - 1;
         }
-
     }
 }
 
