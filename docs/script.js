@@ -46,13 +46,24 @@ const menu_actions = {
 
 // Button actions & particle creation
 let counter = 0;
+let particleIntervalId = null;
 function ButtonClick(el) { //Every Click creates particles
   if (counter === 0) {
     toggleButtonPress("none");
-    setTimeout(() => { toggleButtonPress("auto") }, 750)
+    setTimeout(() => { toggleButtonPress("auto") }, 750);
+    menu_actions[el.id](el);
+
+    // Create particles with interval instead of recursion
+    particleIntervalId = setInterval(() => {
+      if (counter >= 15) {
+        clearInterval(particleIntervalId);
+        counter = 0;
+        return;
+      }
+      LoadAnimation(el);
+      counter++;
+    }, 16); // ~60fps
   }
-  counter === 0 ? menu_actions[el.id](el) : null; // Call button action only once
-  counter < 30 ? LoadAnimation(el) : counter = 0; // Limit particle count & load animation
 }
 
 // Manage particle animation for button click
@@ -80,7 +91,6 @@ function LoadAnimation(el) {
   document.body.appendChild(particle);
 
   // Delay & particle clear
-  requestAnimationFrame(() => { counter++, ButtonClick(el) });
   setTimeout(() => { particle.remove() }, 2000);
 }
 
@@ -163,5 +173,22 @@ function createStar() {
   });
   document.body.appendChild(star);
   setTimeout(() => star.remove(), 2500);
-  createStars ? setTimeout(createStar, 10) : null;
+  // Increased delay from 10ms to 50ms to reduce DOM operations
+  if (createStars) setTimeout(createStar, 50);
 }
+
+// Game info box
+const Infobox = document.getElementById("gameInfo");
+
+// Manage game time display
+function manageGameTime() {
+  const startTime = Date.now();
+  const interval = setInterval(function () {
+    if (GameOver) clearInterval(interval);
+    let elapsedTime = Date.now() - startTime;
+    updateGameStats("#survivedTime", (elapsedTime / 1000).toFixed(1) + "s");
+  }, 100);
+}
+
+// Manage played games & deaths
+function updateGameStats(Category, Value) { Infobox.querySelector(`${Category}`).innerHTML = Value; }

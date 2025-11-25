@@ -4,8 +4,9 @@ const ctx = canvas.getContext("2d");
 
 // Load new game and reset background and old values
 let imgCounter = 0;
-let games = 0;
+let GamesPlayed = 0;
 let GameOver = true;
+let DeathCounter = 0;
 
 const playerImage = new Image();
 const structureImage = new Image();
@@ -17,13 +18,20 @@ const orbImage = new Image();
 
 const images = [playerImage, structureImage, spikeImage, R_SpikeImage, icelandImage, portalImage, orbImage];
 const sources = ["img/player.png", "img/structureIMG.png", "img/spike.png", "img/R_spike.png", "img/iceland.png", "img/portal.png", "img/orb.png"];
-images.forEach((img, i) => { img.src = sources[i], img.onload = imgCounter++ });
+images.forEach((img, i) => {
+    img.onload = () => imgCounter++;
+    img.src = sources[i];
+});
 
 function newGame() {
     if (GameOver) {
         GameOver = false;
         document.getElementById("gameOver").classList.add("hiddenContent");
-        games++;
+
+        manageGameTime();
+        GamesPlayed++;
+        updateGameStats("#gamesPlayed", GamesPlayed);
+
         createStars = false;
         canvas.classList.remove("hiddenContent");
         if (imgCounter === images.length) {
@@ -37,7 +45,7 @@ const player = {
     x: 50,            // position X
     y: canvas.height - 12, // position Y
     width: 12,        // size
-    height: 24,
+    height: 24,       // size
     dx: 0,            // horizontal velocity "deltaX"
     dy: 0,            // vertical velocity "deltaY"
     speed: 0.75,         // how fast player moves left/right
@@ -45,6 +53,27 @@ const player = {
     gravity: 0.1,     // gravity force
     onGround: true
 };
+
+class ObjectPool {
+    constructor(createFunc, initialSize = 10) {
+        this.createFunc = createFunc;
+        this.pool = [];
+        for (let i = 0; i < initialSize; i++) this.pool.push(createFunc());
+    }
+    get() {
+        return this.pool.length > 0 ? this.pool.pop() : this.createFunc();
+    }
+    release(obj) {
+        // Reset object properties to avoid memory bloat
+        obj.x = 0;
+        obj.y = 0;
+        obj.width = 0;
+        obj.height = 0;
+        obj.dx = 0;
+        obj.id = undefined;
+        this.pool.push(obj);
+    }
+}
 
 const obstacle = class {
     constructor(x, y, width, height, dx, id) {
@@ -56,20 +85,36 @@ const obstacle = class {
         this.id = id;
     }
 }
-
 class spike extends obstacle { }
 class iceland extends obstacle { }
 class portal extends obstacle { }
 class orb extends obstacle { }
+
+const spikePool = new ObjectPool(() => new spike(0, 0, 0, 0, 0), 30);
+const obstaclePool = new ObjectPool(() => new obstacle(0, 0, 0, 0, 0), 20);
+const icelandPool = new ObjectPool(() => new iceland(0, 0, 0, 0, 0), 15);
+const portalPool = new ObjectPool(() => new portal(0, 0, 0, 0, 0), 2);
+const orbPool = new ObjectPool(() => new orb(0, 0, 0, 0, 0), 8);
 
 // Keys
 let keys = {};
 document.addEventListener("keydown", e => keys[e.code] = true);
 document.addEventListener("keyup", e => keys[e.code] = false);
 
-function gameLoop() {
-    updateLogic();
-    renderLogic();
+// Frame rate limiting (60 FPS)
+let lastFrameTime = 0;
+const frameDelay = 1000 / 60; // ~16.67ms per frame
+
+function gameLoop(currentTime) {
+    const elapsed = currentTime - lastFrameTime;
+
+    // Only update if enough time has passed
+    if (elapsed >= frameDelay) {
+        lastFrameTime = currentTime - (elapsed % frameDelay);
+        updateLogic();
+        renderLogic();
+    }
+
     if (!GameOver) requestAnimationFrame(gameLoop);
 }
 
@@ -89,9 +134,8 @@ function renderLogic() {
     drawObjects(portals, portalImage);
     drawObjects(orbs, orbImage)
 
-    // Draw player
-    // ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
-    ctx.drawImage(playerImage, Math.round(player.x), Math.round(player.y), Math.round(player.width), Math.round(player.height));
+    // Draw player (no rounding needed - canvas handles it)
+    ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
 }
 
 const widthSpike = player.width * (2 / 3);  //8
@@ -101,56 +145,47 @@ const heightOrb = 6;
 const objectSpeed = 1;
 const universalSize = player.height;
 
-let spawnedObject = null;
-let lastSpawnedObstacle = null;
-
-const groundSpike = (deltaX) => {
-    spikes.push(
-        new spike(
-            canvas.width + deltaX * widthSpike * 2,
-            canvas.height - heightSpike,
-            widthSpike,
-            heightSpike,
-            objectSpeed
-        )
-    )
+const groundSpike = () => {
+    const s_P = spikePool.get();
+    s_P.x = canvas.width;
+    s_P.y = canvas.height - heightSpike;
+    s_P.width = widthSpike;
+    s_P.height = heightSpike;
+    s_P.dx = objectSpeed;
+    spikes.push(s_P);
 }
 
 const temporatyOrbs = (oX, oY, oWidth) => {
     const i = getRandomInt(1, 3)
-    orbs.push(
-        new orb(
-            oX + oWidth / 2 - widthOrb / 2,
-            oY - heightOrb,
-            widthOrb,
-            heightOrb,
-            objectSpeed,
-            i
-        )
-    )
+    const o_P = orbPool.get();
+    o_P.x = oX + oWidth / 2 - widthOrb / 2;
+    o_P.y = oY - heightOrb;
+    o_P.width = widthOrb;
+    o_P.height = heightOrb;
+    o_P.dx = objectSpeed;
+    o_P.id = i;
+    orbs.push(o_P);
 }
 
-let O_2_lastWidth = 0;
-let O_2_DeltaX = 0;
-const groundObstacle = (deltaX) => {
-    O_2_DeltaX = deltaX * getRandomInt(O_2_lastWidth * 2, O_2_lastWidth * 3);
+let O_2_lastWidth = 0; //O_2 => object 2
+const groundObstacle = () => {
     let spawnOrb = true;
     const width = getRandomInt(player.height, player.height * 3);
     const height = getRandomInt(player.height / 4, player.height / 2);
     const x = canvas.width;
     const y = canvas.height - height;
-    obstacles.push(
-        new obstacle(
-            x + O_2_DeltaX,
-            y,
-            width,
-            height,
-            objectSpeed
-        )
-    )
+
+    const go_P = obstaclePool.get();
+    go_P.x = x;
+    go_P.y = y;
+    go_P.width = width;
+    go_P.height = height;
+    go_P.dx = objectSpeed;
+    obstacles.push(go_P);
+
     if (spawnOrb) {
         if (getRandomInt(0, 2) === 2) {
-            temporatyOrbs(x + O_2_DeltaX, y, width);
+            temporatyOrbs(x, y, width);
             spawnOrb = false;
         }
     }
@@ -158,50 +193,46 @@ const groundObstacle = (deltaX) => {
 }
 
 let O_3_lastWidth = 0;
-let O_3_DeltaX = 0;
-const flyingIsland = (deltaX) => {
-    O_3_DeltaX = deltaX * getRandomInt(O_3_lastWidth * 1.5, O_3_lastWidth * 2.5);
+const flyingIsland = () => {
     const x = canvas.width;
     const height = getRandomInt(player.height / 4, player.height / 2);
     const widthIceland = getRandomInt(player.height * 1.5, player.height * 3);
     const y = canvas.height - getRandomInt(player.height * 2, player.height * 3) - height;
-    icelands.push(
-        new iceland(
-            x + O_3_DeltaX,
-            y,
-            widthIceland,
-            height,
-            objectSpeed
-        )
-    )
+
+    const fi_P = icelandPool.get();
+    fi_P.x = x;
+    fi_P.y = y;
+    fi_P.width = widthIceland;
+    fi_P.height = height;
+    fi_P.dx = objectSpeed;
+    icelands.push(fi_P);
 
     // Spawn rotated spikes on the flying island
     if (getRandomInt(0, 1) === 1) { //Spawn spikes on iseland?
         const counterSpikes = Math.floor(widthIceland / widthSpike); //Clear number of max. spikes that can spawn
+
         // How much spikes aktually to spawn? 
         if (getRandomInt(1, 2) === 2) { // 1 spike
-            R_spikes.push(
-                new spike(
-                    x + getRandomInt(0, widthIceland - widthSpike) + O_3_DeltaX,
-                    y + height,
-                    widthSpike,
-                    heightSpike,
-                    objectSpeed
-                ))
+            const s_P = spikePool.get();
+            s_P.x = x + getRandomInt(0, widthIceland - widthSpike);
+            s_P.y = y + height;
+            s_P.width = widthSpike;
+            s_P.height = heightSpike;
+            s_P.dx = objectSpeed;
+            R_spikes.push(s_P);
         } else { // Multiple spikes
             let deltaX = 0;
             let xSpikes = x + getRandomInt(0, widthIceland - widthSpike * counterSpikes);
             const count = getRandomInt(2, counterSpikes)
             for (let i = 0; i < count; i++) {
-                R_spikes.push(
-                    new spike(
-                        xSpikes + deltaX + O_3_DeltaX,
-                        y + height,
-                        widthSpike,
-                        heightSpike,
-                        objectSpeed
-                    )
-                )
+                const s_P = spikePool.get();
+                s_P.x = xSpikes + deltaX;
+                s_P.y = y + height;
+                s_P.width = widthSpike;
+                s_P.height = heightSpike;
+                s_P.dx = objectSpeed;
+                R_spikes.push(s_P);
+
                 deltaX += widthSpike * counterSpikes / count; //Spread spikes evenly to each other over the island
             }
         }
@@ -212,64 +243,79 @@ const flyingIsland = (deltaX) => {
 const groundPortals = (index) => {
     const height = 32;
     const width = 32;
-    let deltaX = index * getRandomInt(width * 3, width * 5);
-    const x = canvas.width;
+    const x = canvas.width + index * getRandomInt(125, 200);
     const y = canvas.height - height;
-    const newPortal = new portal(
-        x + deltaX,
-        y,
-        width,
-        height,
-        objectSpeed,
-        index);
-    portalMap.set(index, newPortal);
-    portals.push(newPortal);
+    const p_P = portalPool.get();
+    p_P.x = x;
+    p_P.y = y;
+    p_P.width = width;
+    p_P.height = height;
+    p_P.dx = objectSpeed;
+    p_P.id = index;
+    portals.push(p_P);
+    portalMap.set(index, p_P);
 }
 
-function createMultibleObjects(func, a, b) {
-    if (getRandomInt(a, b) === b) { func(0) } else {
-        for (let i = 1; i <= getRandomInt(1, 3); i++) func(i);
-    }
-}
-
-let lastNum = null;
+let spawnedObject = null;
+let lastSpawnedObstacle = null;
+let nextNum = 2; //Start with obstacle
+let portalCounter = 0;
 function spawnObject() {
-    const ObjectNum = getRandomInt(1, 4);
-    if (ObjectNum === 1) createMultibleObjects(groundSpike, 0, 1), spawnedObject = spikes[spikes.length - 1];
-    if (ObjectNum === 2) createMultibleObjects(groundObstacle, 0, 1), spawnedObject = obstacles[obstacles.length - 1];
-    if (ObjectNum === 3) {
-        groundPortals(0);
-        groundPortals(1);
-        spawnedObject = portals[portals.length - 1];
+    switch (nextNum) {
+        case 1:
+            groundSpike();
+            spawnedObject = spikes[spikes.length - 1];
+            break;
+        case 2:
+            groundObstacle();
+            spawnedObject = obstacles[obstacles.length - 1];
+            break;
+        case 3:
+            groundPortals(0);
+            groundPortals(1);
+            spawnedObject = portals[portals.length - 1];
+            break;
+        case 4:
+            flyingIsland();
+            spawnedObject = icelands[icelands.length - 1];
+            break;
     }
-    if (ObjectNum === 4) createMultibleObjects(flyingIsland, 0, 1), spawnedObject = icelands[icelands.length - 1];
+
+    //No back to back portals
+    if (nextNum === 3) {
+        do nextNum = getRandomInt(1, 4);
+        while (nextNum === 3)
+    } else nextNum = getRandomInt(1, 4);
     if (spawnedObject) lastSpawnedObstacle = spawnedObject;
-    lastNum = ObjectNum;
 }
 
 // Lightweight distance check spawn only when there is enaught space
 function checkSpawnDistance() {
     if (!lastSpawnedObstacle || GameOver) return;
     const distanceToRight = canvas.width - (lastSpawnedObstacle.x + lastSpawnedObstacle.width);
+    const objectleftEdge = lastSpawnedObstacle.x + lastSpawnedObstacle.width < canvas.width;
     const spawnThreshold = 100; // 100px
-    if (distanceToRight >= spawnThreshold) spawnObject();
+    if (distanceToRight >= spawnThreshold && objectleftEdge) spawnObject();
 }
 
 // Manage collisions & movements  
 function updateLogic() {
-    if (obstacles.length > 0) updateObjects(obstacles);
-    if (icelands.length > 0) updateObjects(icelands);
-    if (R_spikes.length > 0) updateObjects(R_spikes);
-    if (portals.length > 0) updateObjects(portals);
-    if (spikes.length > 0) updateObjects(spikes);
-    if (orbs.length > 0) updateObjects(orbs);
-    updatePlayer();
+
+    updatePlayer();// Move player first
+
+    // Only update arrays that have objects
+    if (obstacles.length) updateObjects(obstacles);
+    if (icelands.length) updateObjects(icelands);
+    if (R_spikes.length) updateObjects(R_spikes);
+    if (spikes.length) updateObjects(spikes);
+    if (orbs.length) updateObjects(orbs);
+    if (portals.length) updatePortals();
+
     checkSpawnDistance();
 }
 
 function drawObjects(object, image) {
     for (const o of object) {
-        // ctx.drawImage(image, Math.round(o.x), Math.round(o.y), Math.round(o.width), Math.round(o.height));
         ctx.drawImage(image, o.x, o.y, o.width, o.height);
     }
 }
@@ -278,19 +324,16 @@ let boosterDelay = 3;
 let playerProtection = false;
 function applyBooster(id) {
     if (id === 1) {
-        console.log("SPEED")
         const speed = player.speed;
         player.speed = speed * 2;
         setTimeout(() => { player.speed = speed }, boosterDelay * 1000);
     }
     if (id === 2) {
-        console.log("JUMP POWER")
         const jumpPower = player.jumpPower;
         player.jumpPower = player.jumpPower * 1.25;
         setTimeout(() => { player.jumpPower = jumpPower }, boosterDelay * 1000);
     }
     if (id === 3) {
-        console.log("Protection");
         playerProtection = true;
         setTimeout(() => { playerProtection = false }, boosterDelay * 1000);
     }
@@ -305,7 +348,6 @@ function updatePlayer() {
     } else {
         player.dx = 0; //Unless player will keep speed
     }
-
     if ((keys["ArrowUp"] || keys["Space"]) && player.onGround) {
         player.dy = player.jumpPower; // Up arrow or space
         player.onGround = false;
@@ -337,86 +379,142 @@ function updatePlayer() {
 }
 
 // Update, movement & remove of objects
+const OCR = 50; //object-collision-radius
+const OCR_SQ = OCR * OCR; // Pre-calculate squared distance
+
 function updateObjects(object) {
     for (let i = object.length - 1; i >= 0; i--) {
         const o = object[i];
+        o.x -= o.dx;// Movement
 
-        o.x -= o.dx;// Movenemt
+        if (o.x + o.width < 0) { // Remove off screen objects and return to pool
+            // Use swap-and-pop instead of splice for better performance
+            const last = object[object.length - 1];
+            object[i] = last;
+            object.pop();
 
-        o.x + o.width < 0 ? object.splice(i, 1) : null; // Remove off screen objects
-
-        // Orbs and effects
-        if (object === orbs &&
-            player.x + player.width > o.x &&
-            player.x < o.x + o.width &&
-            player.y < o.y + o.height &&
-            player.y + player.height > o.y
-        ) {
-            object.splice(i, 1);
-            applyBooster(o.id);
+            // Determine pool based on array reference instead of instanceof
+            if (object === spikes) spikePool.release(o);
+            else if (object === obstacles) obstaclePool.release(o);
+            else if (object === icelands) icelandPool.release(o);
+            else if (object === R_spikes) spikePool.release(o);
+            else if (object === portals) portalPool.release(o);
+            else if (object === orbs) orbPool.release(o);
+            continue;
         }
 
-        // Vertical collision with obstacles
-        if (
-            (object === obstacles || object === icelands) &&
-            player.dy > 0 && // player is falling down
+        // Squared distance
+        const dx = o.x - player.x;
+        const dy = o.y - player.y;
+        if (dx * dx + dy * dy < OCR_SQ) checkPlayerCollision(object, o, i);
+    }
+}
 
-            player.y + player.height > o.y && // player's bottom is below obstacle's top
-            player.y + player.height - player.dy <= o.y && // player's bottom was above obstacle's top last frame (AI improvement)
+function updatePortals() {
+    if (portals.length !== 2) {
+        // Just move portals if we don't have exactly 2
+        for (let i = portals.length - 1; i >= 0; i--) {
+            const p = portals[i];
+            p.x -= p.dx;
+            if (p.x + p.width < 0) {
+                const last = portals[portals.length - 1];
+                portals[i] = last;
+                portals.pop();
+                portalPool.release(p);
+                portalMap.delete(p.id);
+            }
+        }
+        return;
+    }
 
-            player.x + player.width > o.x && // player right overlaps obstacle left
-            player.x < o.x + o.width // player left overlaps obstacle right
-        ) {
-            // Snap player to top of obstacle
-            player.y = o.y - player.height;
-            player.dy = 0;
-            player.onGround = true;
+    const portal1 = portalMap.get(0);
+    const portal2 = portalMap.get(1);
+    const checkTeleport = player.y + player.height > portal1.y && portal2.x + portal2.width < canvas.width - 10;
+
+    for (let i = portals.length - 1; i >= 0; i--) {
+        const p = portals[i];
+        p.x -= p.dx;
+
+        if (checkTeleport) {
+            const leftEntrance = player.x + player.width > p.x && player.x + player.width < p.x + p.width && player.x < p.x;
+            const rightEntrance = player.x > p.x && player.x < p.x + p.width && player.x + player.width > p.x + p.width;
+            const otherPortal = p.id === 0 ? portal2 : portal1;
+
+            if (leftEntrance) player.x = otherPortal.x + otherPortal.width + 1;
+            if (rightEntrance) player.x = otherPortal.x - player.width - 1;
         }
 
-        if (!playerProtection &&
-            (object === spikes || object === R_spikes) &&
-            player.x < o.x + o.width &&
-            player.x + player.width > o.x &&
-            player.y < o.y + o.height &&
-            player.y + player.height > o.y
-        ) resetGame();
-
-        // Player & portal collision
-        if (object === portals &&
-            portals.length > 1 &&
-            portals.length < 3 &&
-            player.y + player.height > o.y
-        ) {
-            // Portal collision detection
-            const leftEntrance =
-                player.x + player.width > o.x &&
-                player.x + player.width < o.x + o.width &&
-                player.x < o.x;
-            const rightEntrance =
-                player.x > o.x &&
-                player.x < o.x + o.width &&
-                player.x + player.width > o.x + o.width;
-            const portal1 = o.id === 0;
-            const portal2 = o.id === 1;
-
-            // Comparision
-            if (leftEntrance && portal1) player.x = portalMap.get(1).x + portalMap.get(1).width + 1;
-            if (leftEntrance && portal2) player.x = portalMap.get(0).x + portalMap.get(0).width + 1;
-            if (rightEntrance && portal1) player.x = portalMap.get(1).x - player.width - 1;
-            if (rightEntrance && portal2) player.x = portalMap.get(0).x - player.width - 1;
+        if (p.x + p.width < 0) {
+            const last = portals[portals.length - 1];
+            portals[i] = last;
+            portals.pop();
+            portalPool.release(p);
+            portalMap.delete(p.id);
         }
     }
 }
 
+function checkPlayerCollision(object, o, i) {
+    // Orbs and effects
+    if (object === orbs &&
+        player.x + player.width > o.x &&
+        player.x < o.x + o.width &&
+        player.y < o.y + o.height &&
+        player.y + player.height > o.y
+    ) {
+        const last = object[object.length - 1];
+        object[i] = last;
+        object.pop();
+        orbPool.release(o);
+        applyBooster(o.id);
+    }
+
+    // Vertical collision with obstacles
+    if (
+        (object === obstacles || object === icelands) &&
+        player.dy > 0 &&
+        player.y + player.height > o.y &&
+        player.y + player.height - player.dy <= o.y && // player's bottom was above obstacle's top last frame (AI improvement)
+        player.x + player.width > o.x &&
+        player.x < o.x + o.width
+    ) {
+        // Snap player to top of obstacle
+        player.y = o.y - player.height;
+        player.dy = 0;
+        player.onGround = true;
+    }
+
+    if (!playerProtection &&
+        (object === spikes || object === R_spikes) &&
+        player.x < o.x + o.width &&
+        player.x + player.width > o.x &&
+        player.y < o.y + o.height &&
+        player.y + player.height > o.y
+    ) resetGame();
+}
+
 function resetGame() {
+    DeathCounter++;
+    updateGameStats("#deaths", DeathCounter);
     GameOver = true;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     document.getElementById("gameOver").classList.toggle("hiddenContent")
+
+    // Return all objects to their pools
+    obstacles.forEach(o => obstaclePool.release(o));
+    spikes.forEach(o => spikePool.release(o));
+    R_spikes.forEach(o => spikePool.release(o));
+    icelands.forEach(o => icelandPool.release(o));
+    orbs.forEach(o => orbPool.release(o));
+    portals.forEach(o => portalPool.release(o));
+
+    // Clear arrays
     obstacles = [];
     spikes = [];
     R_spikes = [];
     icelands = [];
     portals = [];
+    orbs = [];
     portalMap.clear();
     player.dx = 0;
     player.dy = 0;

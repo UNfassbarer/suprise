@@ -146,7 +146,7 @@ ul {
   transform: scale(1.1);
   color: rgb(208, 0, 255);
   font-size: 20px;
-  box-shadow:  5px 5px 15px rgba(251, 0, 255, 0.4);
+  box-shadow: 5px 5px 15px rgba(251, 0, 255, 0.4);
 }
 
 .button:hover canvas {
@@ -222,4 +222,21 @@ ul {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(12.5deg);
+}
+
+#gameInfo {
+  position: absolute;
+  bottom: 25px;
+  right: 25px;
+  width: auto;
+  height: auto;
+  outline: #00c8ff 2px solid;
+  font-size: 2vw;
+  text-shadow: 0 0 5px rgb(0, 0, 0);
+  color: white;
+}
+
+#gameInfo div {
+  margin: 10px;
+  font-size: clamp(1rem, 4vmin, 3rem);
 }
